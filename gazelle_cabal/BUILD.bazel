@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "gazelle_cabal",
+    srcs = ["lang.go", "dependency_resolution.go"],
+    importpath = "github.com/tweag/gazelle_cabal/gazelle_cabal",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_gazelle//config:go_default_library",
+        "@bazel_gazelle//label:go_default_library",
+        "@bazel_gazelle//language:go_default_library",
+        "@bazel_gazelle//language/go:go_default_library",
+        "@bazel_gazelle//language/proto:go_default_library",
+        "@bazel_gazelle//repo:go_default_library",
+        "@bazel_gazelle//resolve:go_default_library",
+        "@bazel_gazelle//rule:go_default_library",
+        "@bazel_gazelle//walk:go_default_library",
+        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+    ],
+)

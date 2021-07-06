@@ -1,0 +1,77 @@
+package(default_visibility = ["//visibility:public"])
+
+load(
+    "@rules_haskell//haskell:defs.bzl",
+    "haskell_binary",
+    "haskell_library",
+    "haskell_test",
+    "haskell_toolchain_library",
+)
+
+haskell_toolchain_library(name = "base", package = "base")
+haskell_toolchain_library(name = "bytestring", package = "bytestring")
+haskell_toolchain_library(name = "Cabal", package = "Cabal")
+haskell_toolchain_library(name = "containers", package = "containers")
+haskell_toolchain_library(name = "filepath", package = "filepath")
+haskell_toolchain_library(name = "prettyprinter", package = "text")
+haskell_toolchain_library(name = "text", package = "text")
+
+haskell_library(
+    name = "cabalscan-library",
+    srcs = glob(["src/**/*.hs"]),
+    compiler_flags = [
+        "-Wall",
+        "-Werror",
+    ],
+    deps = [
+        "@stackage//:aeson",
+        ":base",
+        ":Cabal",
+        ":containers",
+        ":filepath",
+        "@stackage//:optparse-applicative",
+        "@stackage//:path",
+        "@stackage//:path-io",
+        ":text",
+    ],
+)
+
+haskell_binary(
+    name = "cabalscan",
+    srcs = ["exe/Main.hs"],
+    compiler_flags = [
+        "-Wall",
+        "-Werror",
+    ],
+    deps = [
+        "@stackage//:aeson",
+        ":base",
+        ":bytestring",
+        ":containers",
+        ":text",
+        ":cabalscan-library",
+    ],
+)
+
+haskell_test(
+    name = "tasty",
+    srcs = glob(["tests/**/*.hs"]),
+    compiler_flags = [
+        "-Wall",
+        "-Werror",
+        "-DTASTY_DISCOVER_TASTY_DISCOVER_PATH=$(location @stackage-exe//tasty-discover)",
+    ],
+    tools = [
+        "@stackage-exe//tasty-discover",
+    ],
+    deps = [
+        ":base",
+        "@stackage//:hspec",
+        "@stackage//:path",
+        "@stackage//:path-io",
+        "@stackage//:tasty",
+        "@stackage//:tasty-hspec",
+        ":text",
+        ":cabalscan-library",
+    ],
+)
