@@ -1,0 +1,6 @@
+*.swp
+*.swo
+
+# bazel-created symlinks
+bazel-*
+.bazelrc.local

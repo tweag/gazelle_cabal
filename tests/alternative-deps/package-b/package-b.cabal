@@ -1,0 +1,39 @@
+cabal-version:      2.4
+name:               package-b
+version:            0.1.0.0
+
+author:             Facundo Domínguez
+maintainer:         facundo.dominguez@tweag.io
+
+extra-source-files: CHANGELOG.md
+data-files: CHANGELOG.md
+
+library
+    exposed-modules:
+      PackageB.Exposed.A
+    other-modules:
+      PackageB.Other.B
+    build-depends:
+      base,
+      package-a,
+      void
+    default-extensions: ScopedTypeVariables
+    hs-source-dirs: src
+    extra-libraries: m
+    default-language: Haskell2010
+
+test-suite test
+    type: exitcode-stdio-1.0
+    main-is: Main.hs
+    other-modules:
+      PackageB.Other.C
+    cpp-options: -DTASTY_DISCOVER_TASTY_DISCOVER_PATH=tasty-discover
+    build-tool-depends:
+      tasty-discover:tasty-discover
+    build-depends:
+      base,
+      package-b,
+      tasty,
+      tasty-hunit
+    hs-source-dirs: tests
+    default-language: Haskell2010
