@@ -83,8 +83,6 @@ func parseExtraLibraries(config *Config, value string) {
 }
 
 var haskellAttrInfo = rule.KindInfo{
-    MatchAttrs: []string{},
-    NonEmptyAttrs:  map[string]bool{},
     MergeableAttrs: map[string]bool{
         "compiler_flags": true,
         "data": true,
@@ -109,6 +107,11 @@ var kinds = map[string]rule.KindInfo{
             "components": false,
         },
     },
+    "stack_snapshot_components": rule.KindInfo{
+        MergeableAttrs: map[string]bool{
+            "components": true,
+        },
+    },
 }
 
 func (*gazelleCabalLang) Kinds() map[string]rule.KindInfo {
@@ -120,6 +123,14 @@ func (*gazelleCabalLang) Loads() []rule.LoadInfo {
         rule.LoadInfo{
             Name: "@rules_haskell//haskell:defs.bzl",
             Symbols: []string{"haskell_binary", "haskell_library", "haskell_test"},
+        },
+        rule.LoadInfo{
+            Name: "@io_tweag_gazelle_cabal//:stack_snapshot_components/setup.bzl",
+            Symbols: []string{"stack_snapshot_components"},
+        },
+        rule.LoadInfo{
+            Name: "@stack_snapshot_components//:components.bzl",
+            Symbols: []string{"COMPONENTS"},
         },
     }
 }
@@ -171,14 +182,23 @@ func (*gazelleCabalLang) GenerateRules(args language.GenerateArgs) language.Gene
 func (lang *gazelleCabalLang) UpdateRepos(args language.UpdateReposArgs) language.UpdateReposResult {
     packageList, components := collectDependenciesFromRepo(args.Config, lang)
 
-    r := rule.NewRule("stack_snapshot", "stackage")
-    r.SetAttr("packages", packageList)
+    r1 := rule.NewRule("stack_snapshot_components", "stack_snapshot_components")
+    r1.SetAttr("components", componentsToStrings(components))
+
+    r2 := rule.NewRule("stack_snapshot", "stackage")
+    r2.SetAttr("packages", packageList)
     if len(components) > 0 {
-        r.SetAttr("components", components)
+        r2.SetAttr("components", components)
     }
 
-    return language.UpdateReposResult{
-        Gen:     []*rule.Rule{r},
+    if len(components) > 0 {
+        return language.UpdateReposResult{
+            Gen:     []*rule.Rule{r1, r2},
+        }
+    } else {
+        return language.UpdateReposResult{
+            Gen:     []*rule.Rule{r2},
+        }
     }
 }
 

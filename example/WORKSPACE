@@ -36,11 +36,17 @@ nixpkgs_local_repository(
 
 nixpkgs_python_configure(repository = "@nixpkgs")
 
-load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
-
 ######################################
 # Haskell dependencies and toolchain
 ######################################
+
+load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
+load("@io_tweag_gazelle_cabal//:stack_snapshot_components/setup.bzl", "stack_snapshot_components")
+
+stack_snapshot_components(
+    name = "stack_snapshot_components",
+    components = ["tasty-discover lib exe:tasty-discover"],
+)
 
 stack_snapshot(
     name = "stackage",

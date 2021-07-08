@@ -286,6 +286,16 @@ func toolsToComponents(tools map[string]map[string]bool) map[string][]string {
     return toolMaps
 }
 
+func componentsToStrings(components map[string][]string) []string {
+    cstrings := make([]string, len(components))
+    i := 0
+    for k, v := range components {
+        cstrings[i] = k + " " + strings.Join(v, " ")
+        i++
+    }
+    return cstrings
+}
+
 func mapSortedStringKeys(m map[string]bool) []string {
     ss := make([]string, len(m))
     i := 0
