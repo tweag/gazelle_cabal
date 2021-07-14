@@ -1,5 +1,7 @@
 ## A gazelle extension for Cabal files
 
+[![Build status](https://badge.buildkite.com/4529c8b05b4bb481bd50b509acdfb3e5f862b308c8ddbe441d.svg?branch=main)](https://buildkite.com/tweag-1/gazelle-cabal)
+
 This is a [gazelle][gazelle] extension that generates and
 updates [Haskell rules][rules_haskell] for [Bazel][bazel]
 from [Cabal][cabal] files.
