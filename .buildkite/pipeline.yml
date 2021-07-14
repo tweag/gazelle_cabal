@@ -1,0 +1,36 @@
+steps:
+  - label: "Build and unit tests"
+    command: |
+      echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" > .bazelrc.local
+      echo build --repository_cache=~/.bazel_repo_cache >> .bazelrc.local
+      echo build --disk_cache=~/.bazel_disk_cache >> .bazelrc.local
+      nix-shell --pure --run 'bazel test //...'
+    timeout: 30
+  - label: "Test the example"
+    command: |
+      echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" > .bazelrc.local
+      echo build --repository_cache=~/.bazel_repo_cache >> .bazelrc.local
+      echo build --disk_cache=~/.bazel_disk_cache >> .bazelrc.local
+      ln -sr .bazelrc.local example/.bazelrc.local
+      cd example
+      nix-shell --pure --run 'bazel run //:gazelle'
+      nix-shell --pure --run 'bazel run //:gazelle-update-repos'
+      nix-shell --pure --run 'bazel test //...'
+    timeout: 30
+  - label: "Test alternative dependencies"
+    command: |
+      echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" > .bazelrc.local
+      echo build --repository_cache=~/.bazel_repo_cache >> .bazelrc.local
+      echo build --disk_cache=~/.bazel_disk_cache >> .bazelrc.local
+      ln -sr .bazelrc.local tests/alternative-deps/.bazelrc.local
+      cd tests/alternative-deps
+      nix-shell --pure --run 'bazel run //:gazelle'
+      nix-shell --pure --run 'bazel run //:gazelle-update-repos'
+      nix-shell --pure --run 'bazel test //...'
+    timeout: 30
+  - label: "buildifier linting"
+    command: |
+      echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" > .bazelrc.local
+      echo build --repository_cache=~/.bazel_repo_cache >> .bazelrc.local
+      echo build --disk_cache=~/.bazel_disk_cache >> .bazelrc.local
+      nix-shell --pure --run 'bazel run //:buildifier-diff'
