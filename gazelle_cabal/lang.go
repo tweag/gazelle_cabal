@@ -203,18 +203,10 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 	ruleInfos := cabalToRuleInfos(cabalFiles)
 
 	for _, r := range f.Rules {
-		// We need to respect # keep comments on rules
-		if r.ShouldKeep() {
-			continue
-		}
-
-		kind := r.Kind()
-
-		// We should only delete rules that we can possibly generate / know about.
-		if kind == "haskell_library" || kind == "haskell_binary" || kind == "haskell_test" {
-			if !hasRuleInfo(ruleInfos, r.Kind(), r.Name()) {
-				r.Delete()
-			}
+		if !r.ShouldKeep() &&
+			isHaskellRule(r.Kind()) &&
+			!hasRuleInfo(ruleInfos, r.Kind(), r.Name()) {
+			r.Delete()
 		}
 	}
 }
