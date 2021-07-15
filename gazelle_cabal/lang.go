@@ -48,7 +48,7 @@ func (*gazelleCabalLang) KnownDirectives() []string {
 }
 
 type Config struct {
-	ExtraLibrariesMap map[string]string
+	ExtraLibrariesMap  map[string]string
 	HaskellPackageRepo string
 }
 
@@ -63,7 +63,7 @@ func (*gazelleCabalLang) Configure(c *config.Config, rel string, f *rule.File) {
 		extraConfig = m.(Config)
 	} else {
 		extraConfig = Config{
-			ExtraLibrariesMap: make(map[string]string),
+			ExtraLibrariesMap:  make(map[string]string),
 			HaskellPackageRepo: "stackage",
 		}
 	}
@@ -107,8 +107,8 @@ var kinds = map[string]rule.KindInfo{
 	"haskell_library": haskellAttrInfo,
 	"haskell_binary":  haskellAttrInfo,
 	"haskell_test":    haskellAttrInfo,
-	"ghc_plugin":      rule.KindInfo{},
-	"stack_snapshot": rule.KindInfo{
+	"ghc_plugin":      {},
+	"stack_snapshot": {
 		MergeableAttrs: map[string]bool{
 			"packages": true,
 			// Disabled since gazelle aborts when merging this
@@ -125,7 +125,7 @@ func (*gazelleCabalLang) Kinds() map[string]rule.KindInfo {
 
 func (*gazelleCabalLang) Loads() []rule.LoadInfo {
 	return []rule.LoadInfo{
-		rule.LoadInfo{
+		{
 			Name:    "@rules_haskell//haskell:defs.bzl",
 			Symbols: []string{"haskell_binary", "haskell_library", "haskell_test"},
 		},
@@ -142,7 +142,7 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 	case "haskell_test":
 		prefix = "test:"
 	}
-	return []resolve.ImportSpec{resolve.ImportSpec{gazelleCabalName, prefix + r.Name()}}
+	return []resolve.ImportSpec{{gazelleCabalName, prefix + r.Name()}}
 }
 
 func (*gazelleCabalLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
@@ -192,6 +192,9 @@ func (lang *gazelleCabalLang) UpdateRepos(args language.UpdateReposArgs) languag
 }
 
 func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
+	if !c.ShouldFix {
+		return
+	}
 	cabalFiles := listFilesWithExtension(filepath.Dir(f.Path), ".cabal")
 	if len(cabalFiles) == 0 || f == nil {
 		return
@@ -200,8 +203,18 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 	ruleInfos := cabalToRuleInfos(cabalFiles)
 
 	for _, r := range f.Rules {
-		if !hasRuleInfo(ruleInfos, r.Kind(), r.Name()) {
-			r.Delete()
+		// We need to respect # keep comments on rules
+		if r.ShouldKeep() {
+			continue
+		}
+
+		kind := r.Kind()
+
+		// We should only delete rules that we can possibly generate / know about.
+		if kind == "haskell_library" || kind == "haskell_binary" || kind == "haskell_test" {
+			if !hasRuleInfo(ruleInfos, r.Kind(), r.Name()) {
+				r.Delete()
+			}
 		}
 	}
 }
