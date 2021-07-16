@@ -1,0 +1,46 @@
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary", "haskell_toolchain_library")
+
+# Testing that rules marked with "keep" aren't removed by
+# gazelle diff
+
+# keep
+haskell_binary(
+    name = "a-haskell-binary",
+    srcs = [
+        "app/Main.hs",
+        "app/PackageA/Other/C.hs",
+    ],
+    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    plugins = [],
+    tools = [],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":package-a",
+        "@stackage//:base",
+    ],
+)
+
+# Testing that non-managed Haskell rules aren't removed by
+# gazelle diff
+haskell_toolchain_library(name = "base")
+
+# Testing that haskell rules are removed by
+# gazelle diff
+
+haskell_binary(
+    name = "another-haskell-binary",
+    srcs = [
+        "app/Main.hs",
+        "app/PackageA/Other/C.hs",
+    ],
+    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    plugins = [],
+    tools = [],
+    version = "0.1.0.0",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":package-a",
+        "@stackage//:base",
+    ],
+)

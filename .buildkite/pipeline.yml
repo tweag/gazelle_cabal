@@ -14,6 +14,18 @@ steps:
       ln -sr .bazelrc.local example/.bazelrc.local
       cd example
       nix-shell --pure --run 'bazel run //:gazelle'
+      # Gazelle doesn't remove rules by default
+      grep -q another-haskell-binary package-a/BUILD.bazel
+      nix-shell --pure --run 'bazel run //:gazelle -- fix -mode diff' || true
+      nix-shell --pure --run 'bazel run //:gazelle -- fix'
+      # Test that fix kept and removed the expected rules
+      echo "! grep -q another-haskell-binary package-a/BUILD.bazel"
+      bash -c "! grep -q another-haskell-binary package-a/BUILD.bazel"
+      echo grep -q a-haskell-binary package-a/BUILD.bazel
+      grep -q a-haskell-binary package-a/BUILD.bazel
+      echo grep -q haskell_toolchain_library package-a/BUILD.bazel
+      grep -q haskell_toolchain_library package-a/BUILD.bazel
+      # Test gazelle-update-repos
       nix-shell --pure --run 'bazel run //:gazelle-update-repos'
       nix-shell --pure --run 'bazel test //...'
     timeout: 30
