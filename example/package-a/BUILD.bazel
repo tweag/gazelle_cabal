@@ -21,7 +21,7 @@ haskell_binary(
     ],
 )
 
-# Testing that non-haskell rules aren't removed by
+# Testing that non-managed Haskell rules aren't removed by
 # gazelle diff
 haskell_toolchain_library(name = "base")
 
