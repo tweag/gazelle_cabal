@@ -92,7 +92,7 @@ func parseExtraLibraries(config *Config, value string) {
 var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
-	MergeableAttrs: map[string]bool{
+	ResolveAttrs: map[string]bool{
 		"compiler_flags": true,
 		"data":           true,
 		"deps":           true,
