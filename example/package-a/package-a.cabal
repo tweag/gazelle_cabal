@@ -56,3 +56,14 @@ benchmark bench-a
       package-a
     hs-source-dirs: app
     default-language: Haskell2010
+
+benchmark bench-b
+    type: exitcode-stdio-1.0
+    main-is: MainB.hs
+    other-modules:
+      PackageA.Other.C
+    build-depends:
+      -- base, Droppped on purpose to test that gazelle_cabal keeps dependencies marked with # keep
+      package-a
+    hs-source-dirs: app
+    default-language: Haskell2010
