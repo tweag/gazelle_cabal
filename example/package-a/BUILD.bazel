@@ -44,3 +44,19 @@ haskell_binary(
         "@stackage//:base",
     ],
 )
+
+# rule generated from package-a/package-a.cabal by gazelle_cabal
+haskell_binary(
+    name = "bench-b",
+    compiler_flags = [
+        "-DSOME_VALUE=1",  # keep
+    ],
+    # base is left out of the dependencies in the cabal file but it
+    # is needed for building.
+    # We keep it here to check that we can keep dependencies.
+    #
+    # Similarly, we test "keep" in compiler_flags above, too.
+    deps = [
+        "@stackage//:base",  # keep
+    ],
+)

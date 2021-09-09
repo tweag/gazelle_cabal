@@ -92,7 +92,7 @@ func parseExtraLibraries(config *Config, value string) {
 var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
-	MergeableAttrs: map[string]bool{
+	ResolveAttrs: map[string]bool{
 		"compiler_flags": true,
 		"data":           true,
 		"deps":           true,
@@ -181,7 +181,7 @@ func (lang *gazelleCabalLang) UpdateRepos(args language.UpdateReposArgs) languag
 
 	packageRepo := args.Config.Exts[gazelleCabalName].(Config).HaskellPackageRepo
 	r := rule.NewRule("stack_snapshot", packageRepo)
-	r.SetAttr("packages", packageList)
+	SetArrayAttr(r, "packages", packageList)
 	if len(components) > 0 {
 		r.SetAttr("components", components)
 	}
