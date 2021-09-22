@@ -21,7 +21,7 @@ Then import `gazelle_cabal`.
 
 ```python
 http_archive(
-    name = "io_tweag_cabal_gazelle",
+    name = "io_tweag_gazelle_cabal",
     strip_prefix = "gazelle_cabal-main",
     url = "https://github.com/tweag/gazelle_cabal/archive/main.zip",
 )
