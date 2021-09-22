@@ -4,7 +4,7 @@ steps:
       echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" > .bazelrc.local
       echo build --repository_cache=~/.bazel_repo_cache >> .bazelrc.local
       echo build --disk_cache=~/.bazel_disk_cache >> .bazelrc.local
-      nix-shell --pure --run 'bazel test //...'
+      nix-shell --pure --run 'bazel test --test_output=all //...'
     timeout: 30
   - label: "Test the example"
     command: |
