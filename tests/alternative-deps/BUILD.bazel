@@ -11,7 +11,7 @@ load("@rules_haskell//haskell:defs.bzl", "ghc_plugin")
 gazelle(
     name = "gazelle",
     data = ["@io_tweag_gazelle_cabal//cabalscan"],
-    gazelle = "//:gazelle_binary",
+    gazelle = ":gazelle_binary",
 )
 
 gazelle_binary(
@@ -28,7 +28,7 @@ gazelle(
         "gazelle_cabal",
         "stackage-b",
     ],
-    gazelle = "//:gazelle_binary",
+    gazelle = ":gazelle_binary",
 )
 
 ghc_plugin(

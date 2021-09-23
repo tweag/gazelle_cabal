@@ -65,7 +65,7 @@ load(
 gazelle(
     name = "gazelle",
     data = ["@io_tweag_gazelle_cabal//cabalscan"],
-    gazelle = "//:gazelle_binary",
+    gazelle = ":gazelle_binary",
 )
 
 gazelle_binary(
@@ -97,7 +97,7 @@ gazelle(
         "gazelle_cabal",
         "stackage",
     ],
-    gazelle = "//:gazelle_binary",
+    gazelle = ":gazelle_binary",
 )
 ```
 Then build and run gazelle with
