@@ -25,6 +25,8 @@ steps:
       grep -q a-haskell-binary package-a/BUILD.bazel
       echo grep -q haskell_toolchain_library package-a/BUILD.bazel
       grep -q haskell_toolchain_library package-a/BUILD.bazel
+      # test sublibrary support
+      bash -cx "grep -q sublib package-b/BUILD.bazel"
       # Test gazelle-update-repos
       nix-shell --pure --run 'bazel run //:gazelle-update-repos'
       nix-shell --pure --run 'bazel test //...'
