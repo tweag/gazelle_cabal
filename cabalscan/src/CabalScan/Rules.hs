@@ -3,7 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Cabal2Build.Rules where
+module CabalScan.Rules where
 
 import qualified Data.Aeson as Aeson
 import Data.Text (Text)

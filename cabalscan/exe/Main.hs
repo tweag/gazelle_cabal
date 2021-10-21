@@ -2,9 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Cabal2Build.Rules (RuleInfo)
-import Cabal2Build.RuleGenerator (generateRulesForCabalFile)
-import qualified Cabal2Build.Options as Options
+import CabalScan.Rules (RuleInfo)
+import CabalScan.RuleGenerator (generateRulesForCabalFile)
+import qualified CabalScan.Options as Options
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy
 

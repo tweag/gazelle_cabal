@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Functions to generate rules from Cabal files
-module Cabal2Build.RuleGenerator
+module CabalScan.RuleGenerator
   ( generateRulesForCabalFile
   -- * Exported for tests
   , findModulePath
@@ -33,7 +33,12 @@ import qualified Distribution.Verbosity as Verbosity
 import Path (Path, Rel, Dir, File)
 import qualified Path as Path
 import qualified Path.IO as Path
-import Cabal2Build.Rules
+import CabalScan.Rules
+    ( ToolName(ToolName),
+      AttrValue(StringListValue, TextValue),
+      ImportData(ImportData, deps, compilerFlags, extraLibraries, tools),
+      RuleInfo(..),
+      ComponentType(..) )
 import System.FilePath (dropExtension)
 
 
@@ -41,6 +46,7 @@ generateRulesForCabalFile :: Path b File -> IO [RuleInfo]
 generateRulesForCabalFile cabalFilePath = do
   pd <- readCabalFile cabalFilePath
   let library = Cabal.library pd
+      sublibraries = Cabal.subLibraries pd
       executables = Cabal.executables pd
       testsuites = Cabal.testSuites pd
       benchmarks = Cabal.benchmarks pd
@@ -48,6 +54,8 @@ generateRulesForCabalFile cabalFilePath = do
       dataFiles = Cabal.dataFiles pd
   mlibraryRule <-
     traverse (generateLibraryRule cabalFilePath pkgId dataFiles) library
+  sublibraryRules <-
+    traverse (generateLibraryRule cabalFilePath pkgId dataFiles) sublibraries
   executablesRules <-
     traverse (generateBinaryRule cabalFilePath pkgId dataFiles) executables
   testSuiteRules <-
@@ -55,7 +63,7 @@ generateRulesForCabalFile cabalFilePath = do
   benchmarkRules <-
     traverse (generateBenchmarkRule cabalFilePath pkgId dataFiles) benchmarks
   return $ catMaybes $
-    maybeToList mlibraryRule ++ executablesRules ++ testSuiteRules ++ benchmarkRules
+    maybeToList mlibraryRule ++ sublibraryRules ++ executablesRules ++ testSuiteRules ++ benchmarkRules
 
 generateLibraryRule
   :: Path b File
@@ -64,7 +72,7 @@ generateLibraryRule
   -> Cabal.Library
   -> IO (Maybe RuleInfo)
 generateLibraryRule cabalFilePath pkgId dataFiles lib = do
-  let pkgName = pkgNameToText $ Cabal.pkgName pkgId
+  let libraryName = obtainLibraryName $ Cabal.libName lib
       exposedModules = map Cabal.toFilePath $ Cabal.exposedModules lib
       buildInfo = Cabal.libBuildInfo lib
   generateRule
@@ -74,7 +82,11 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
     buildInfo
     exposedModules
     LIB
-    pkgName
+    libraryName
+  where
+    obtainLibraryName :: Cabal.LibraryName -> Text
+    obtainLibraryName (Cabal.LSubLibName name) = Text.pack . Cabal.unUnqualComponentName $ name
+    obtainLibraryName _ = pkgNameToText . Cabal.pkgName $ pkgId
 
 generateBinaryRule
   :: Path b File
