@@ -1,4 +1,4 @@
-module Sublibrary.SLib (dummy) where
+module Sublibrary.SLib (dummyText) where
 
 dummyText :: Text
 dummyText = "dummyText"
