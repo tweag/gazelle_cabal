@@ -34,11 +34,6 @@ import Path (Path, Rel, Dir, File)
 import qualified Path as Path
 import qualified Path.IO as Path
 import CabalScan.Rules
-    ( ToolName(ToolName),
-      AttrValue(StringListValue, TextValue),
-      ImportData(ImportData, deps, compilerFlags, extraLibraries, tools),
-      RuleInfo(..),
-      ComponentType(..) )
 import System.FilePath (dropExtension)
 
 
