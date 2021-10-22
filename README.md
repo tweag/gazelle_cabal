@@ -182,7 +182,7 @@ generate Haskell rules. The most important functions are:
 
 Despite that `gazelle_cabal` can produce most of the build configuration
 from Cabal files, Haskell dependencies brought with `stack_snapshot`
-might fail to build if their Cabal files use some particular
+might fail to build if their Cabal files use internal libraries or some particular
 custom `Setup.hs` files. In these cases, the simpler route to adoption could
 be to patch the problematic dependencies and add them to a local `stack`
 snapshot (see the [local_snapshot][local_snapshot] attribute of
