@@ -81,7 +81,7 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
   where
     obtainLibraryName :: Cabal.LibraryName -> Text
     obtainLibraryName (Cabal.LSubLibName name) = Text.pack . Cabal.unUnqualComponentName $ name
-    obtainLibraryName _ = pkgNameToText . Cabal.pkgName $ pkgId
+    obtainLibraryName _ = pkgNameToText $ Cabal.pkgName pkgId
 
 generateBinaryRule
   :: Path b File
