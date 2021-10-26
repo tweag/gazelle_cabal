@@ -133,6 +133,12 @@ In general, package names in the `build-depends` field are mapped to
 rule in the current repository with the same name, in which
 case such a target is added to the `deps` attribute instead.
 
+Similar logic applies in case of [internal libraries](internal-libraries)
+(a.k.a *sublibraries* or *named libraries*). Additionally, please 
+beware of shadowing feature and the fact that internal libraries do
+not leak outside of the package where they have been defined. However,
+their `visibility` is by default set to `public`.
+
 If there is a `ghc_plugin` rule named as `<package name>-plugin` and
 `<package name>` is listed in the `build-depends` field, the
 corresponding label is added to the `plugins` attribute and omitted
@@ -224,3 +230,4 @@ Have questions? Need help? Tweet at
 [go]: https://golang.org
 [rules_haskell]: https://github.com/tweag/rules_haskell
 [local_snapshot]: https://api.haskell.build/haskell/cabal.html#stack_snapshot-local_snapshot
+[internal_libraries]: https://cabal.readthedocs.io/en/3.6/cabal-package.html?#sublibs

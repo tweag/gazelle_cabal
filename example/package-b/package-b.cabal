@@ -12,9 +12,18 @@ library sublib
     exposed-modules:
       Sublibrary.SLib
     build-depends:
-      base
+      base,
+      text
     hs-source-dirs: slib
     default-language: Haskell2010
+
+library mtl
+     -- exposed-modules:
+       -- Sublibrary.SLib
+     build-depends:
+       sublib
+     -- hs-source-dirs: slib
+     default-language: Haskell2010
 
 library
     exposed-modules:
@@ -22,8 +31,9 @@ library
     other-modules:
       PackageB.Other.B
     build-depends:
+      -- sublib,
+      mtl,
       base,
-      sublib,
       package-a,
       void
     default-extensions: ScopedTypeVariables

@@ -214,13 +214,33 @@ func getPackageLabel(
 	packageName string,
 	from label.Label,
 ) label.Label {
-	spec := resolve.ImportSpec{gazelleCabalName, packageName}
-	res := ix.FindRulesByImport(spec, gazelleCabalName)
-	if len(res) > 0 {
-		return rel(res[0].Label, from)
-	} else {
-		return rel(label.New(packageRepo, "", packageName), from)
-	}
+	// suppose we first look for the internal rule using the prefix "internal_library:" for the key
+    spec := resolve.ImportSpec{gazelleCabalName, "internal_library:" + packageName}
+    res := ix.FindRulesByImport(spec, gazelleCabalName)
+
+    // Search for the label of an internal library in the current packagea
+    for _, r := range res {
+		if r.IsSelfImport(from) {
+			// cabal produces error for such circular dependency
+			//panic(fmt.Sprintf("Dependency cycle detected in the following component: %s", from))
+		}
+		// if it's indeed internal library than take it
+        if r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg {
+            return rel(r.Label, from)
+        }
+    }
+
+    // There are no internal libraries, so let's look for a regular library
+    spec = resolve.ImportSpec{gazelleCabalName, packageName}
+    res = ix.FindRulesByImport(spec, gazelleCabalName)
+
+	// we take the dependency we've found locally
+    if len(res) > 0 {
+        return rel(res[0].Label, from)
+    }
+
+	// or we take the dep for the repository
+    return rel(label.New(packageRepo, "", packageName), from)
 }
 
 ///////////////////////////////////////////////////////////////////

@@ -28,6 +28,10 @@ executable package-a
       PackageA.Other.C
     build-depends:
       base,
+      -- mtl added to check if internal
+      -- library form package-b
+      -- doesn't leak to other pkgs
+      mtl,
       package-a
     ld-options: -optl-pthread
     hs-source-dirs: app

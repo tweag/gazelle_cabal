@@ -36,7 +36,6 @@ import qualified Path.IO as Path
 import CabalScan.Rules
 import System.FilePath (dropExtension)
 
-
 generateRulesForCabalFile :: Path b File -> IO [RuleInfo]
 generateRulesForCabalFile cabalFilePath = do
   pd <- readCabalFile cabalFilePath
@@ -48,9 +47,9 @@ generateRulesForCabalFile cabalFilePath = do
       pkgId = Cabal.package pd
       dataFiles = Cabal.dataFiles pd
   mlibraryRule <-
-    traverse (generateLibraryRule cabalFilePath pkgId dataFiles) library
+    traverse (generateLibraryRule cabalFilePath pkgId dataFiles []) library
   sublibraryRules <-
-    traverse (generateLibraryRule cabalFilePath pkgId dataFiles) sublibraries
+    traverse (generateLibraryRule cabalFilePath pkgId dataFiles sublibPrivateAttrs) sublibraries
   executablesRules <-
     traverse (generateBinaryRule cabalFilePath pkgId dataFiles) executables
   testSuiteRules <-
@@ -64,9 +63,10 @@ generateLibraryRule
   :: Path b File
   -> Cabal.PackageIdentifier
   -> [FilePath]
+  -> Attributes
   -> Cabal.Library
   -> IO (Maybe RuleInfo)
-generateLibraryRule cabalFilePath pkgId dataFiles lib = do
+generateLibraryRule cabalFilePath pkgId dataFiles privAttrs lib = do
   let libraryName = obtainLibraryName $ Cabal.libName lib
       exposedModules = map Cabal.toFilePath $ Cabal.exposedModules lib
       buildInfo = Cabal.libBuildInfo lib
@@ -78,6 +78,7 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
     exposedModules
     LIB
     libraryName
+    privAttrs
   where
     obtainLibraryName :: Cabal.LibraryName -> Text
     obtainLibraryName (Cabal.LSubLibName name) = Text.pack . Cabal.unUnqualComponentName $ name
@@ -107,6 +108,7 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
     mainis
     EXE
     targetName
+    []
 
 generateTestRule
   :: Path b File
@@ -128,6 +130,7 @@ generateTestRule cabalFilePath pkgId dataFiles testsuite = do
     mainis
     TEST
     testName
+    []
 
 generateBenchmarkRule
   :: Path b File
@@ -149,6 +152,7 @@ generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
     mainis
     BENCH
     benchName
+    []
 
 generateRule
   :: Path b File
@@ -158,9 +162,10 @@ generateRule
   -> [FilePath]
   -> ComponentType
   -> Text
+  -> Attributes
   -> IO (Maybe RuleInfo)
-generateRule _ _ _ bi _ _ _ | not (Cabal.buildable bi) = return Nothing
-generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName = do
+generateRule _ _ _ bi _ _ _ _ | not (Cabal.buildable bi) = return Nothing
+generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAttrs = do
   let pkgName = pkgNameToText $ Cabal.pkgName pkgId
       pkgVersion = Text.pack $ Cabal.prettyShow $ Cabal.pkgVersion pkgId
       versionMacro =
@@ -194,6 +199,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName = do
               -- library.
             , ctype == LIB || pkgName `notElem` deps
             ]
+         , privateAttrs = privAttrs
         }
   where
     pathToText = Text.pack . Path.toFilePath
@@ -207,6 +213,10 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName = do
     toToolName (Cabal.ExeDependency pkg exe _) =
       ToolName (pkgNameToText pkg) (Text.pack $ Cabal.unUnqualComponentName exe)
 
+sublibPrivateAttrs :: Attributes
+sublibPrivateAttrs = [ ("internal_library", TextValue true) ]
+                     where
+                       true = Text.toLower . Text.pack $ show True
 
 componentTypeToRuleName :: ComponentType -> Text
 componentTypeToRuleName = \case
