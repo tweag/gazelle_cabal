@@ -190,7 +190,7 @@ func (lang *gazelleCabalLang) UpdateRepos(args language.UpdateReposArgs) languag
 
 	packageRepo := args.Config.Exts[gazelleCabalName].(Config).HaskellPackageRepo
 	r := rule.NewRule("stack_snapshot", packageRepo)
-	SetArrayAttr(r, "packages", packageList)
+	r.SetAttr("packages", packageList)
 	if len(components) > 0 {
 		r.SetAttr("components", components)
 	}
