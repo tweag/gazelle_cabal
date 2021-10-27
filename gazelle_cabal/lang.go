@@ -221,13 +221,15 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 }
 
 func copyPrivateAttrs(from []*rule.Rule, to []*rule.Rule) {
-	for _, f := range from {
-		for _, t := range to {
-			if (f.Name() == t.Name()) {
-				for _, key := range f.PrivateAttrKeys() {
-					t.SetPrivateAttr(key, f.PrivateAttr(key))
-				}
-				continue
+	// Convert slice to map to avoid quadratic runtime
+	toMap := make(map[string]*rule.Rule)
+	for _, r := range to {
+		toMap[r.Name()] = r
+	}
+	for _, rFrom := range from {
+		if rTo, ok := toMap[rFrom.Name()]; ok {
+			for _, key := range rFrom.PrivateAttrKeys() {
+				rTo.SetPrivateAttr(key, rFrom.PrivateAttr(key))
 			}
 		}
 	}

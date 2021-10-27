@@ -214,33 +214,38 @@ func getPackageLabel(
 	packageName string,
 	from label.Label,
 ) label.Label {
-	// suppose we first look for the internal rule using the prefix "internal_library:" for the key
-    spec := resolve.ImportSpec{gazelleCabalName, "internal_library:" + packageName}
-    res := ix.FindRulesByImport(spec, gazelleCabalName)
+	// Search for the rule of an internal library using the prefix "internal_library:" for the key
+	spec := resolve.ImportSpec{gazelleCabalName, "internal_library:" + packageName}
+	res := ix.FindRulesByImport(spec, gazelleCabalName)
 
-    // Search for the label of an internal library in the current packagea
-    for _, r := range res {
+	// Search for the label of an internal library in the current package
+	for _, r := range res {
 		if r.IsSelfImport(from) {
-			// cabal produces error for such circular dependency
-			//panic(fmt.Sprintf("Dependency cycle detected in the following component: %s", from))
+			// Cabal produces an error for circular dependency
+			log.Fatalf("Dependency cycle detected in the following component: %s", from)
 		}
 		// if it's indeed internal library than take it
-        if r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg {
-            return rel(r.Label, from)
-        }
-    }
+		if r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg {
+			return rel(r.Label, from)
+		}
+	}
 
-    // There are no internal libraries, so let's look for a regular library
-    spec = resolve.ImportSpec{gazelleCabalName, packageName}
-    res = ix.FindRulesByImport(spec, gazelleCabalName)
+	// There are no internal libraries, so let's look for a regular library
+	spec = resolve.ImportSpec{gazelleCabalName, packageName}
+	res = ix.FindRulesByImport(spec, gazelleCabalName)
 
-	// we take the dependency we've found locally
-    if len(res) > 0 {
-        return rel(res[0].Label, from)
-    }
+	if len(res) > 1 {
+		// There are at least two cabal pkgs with the same name
+		log.Fatalf("Multiple labels found under %s for package $s : %s", from, packageName, res)
+	}
 
-	// or we take the dep for the repository
-    return rel(label.New(packageRepo, "", packageName), from)
+	// We take the dep we've found locally...
+	if len(res) == 1 {
+		return rel(res[0].Label, from)
+	}
+
+	// or we take the dep from the repository
+	return rel(label.New(packageRepo, "", packageName), from)
 }
 
 ///////////////////////////////////////////////////////////////////
