@@ -49,7 +49,7 @@ func setToolsAttribute(
 		tools = append(tools, toolLabel.String())
 	}
 
-	SetArrayAttr(r, "tools", tools)
+	r.SetAttr("tools", tools)
 }
 
 // Drops preexisting macro definitions for tools. Adds new macro
@@ -72,7 +72,7 @@ func setCompilerFlagsAttribute(
 	dropToolMacroDefs(importData.CompilerFlags, importData.Tools, &compilerFlags)
 	addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &compilerFlags)
 	addMacroDefs(ix, toolRepo, importData.Tools, from, &compilerFlags)
-	SetArrayAttr(r, "compiler_flags", compilerFlags)
+	r.SetAttr("compiler_flags", compilerFlags)
 }
 
 // Drops from xs all of the macro definitions for the given tools
@@ -186,8 +186,8 @@ func setDepsAndPluginsAttributes(
 			deps = append(deps, libLabel)
 		}
 	}
-	SetArrayAttr(r, "deps", deps)
-	SetArrayAttr(r, "plugins", plugins)
+	r.SetAttr("deps", deps)
+	r.SetAttr("plugins", plugins)
 }
 
 // Produces a plugin label if there is a ghc_plugin rule with the
@@ -214,13 +214,38 @@ func getPackageLabel(
 	packageName string,
 	from label.Label,
 ) label.Label {
-	spec := resolve.ImportSpec{gazelleCabalName, packageName}
+	// Search for the rule of an internal library using the prefix "internal_library:" for the key
+	spec := resolve.ImportSpec{gazelleCabalName, "internal_library:" + packageName}
 	res := ix.FindRulesByImport(spec, gazelleCabalName)
-	if len(res) > 0 {
-		return rel(res[0].Label, from)
-	} else {
-		return rel(label.New(packageRepo, "", packageName), from)
+
+	// Search for the label of an internal library in the current package
+	for _, r := range res {
+		if r.IsSelfImport(from) {
+			// Cabal produces an error for circular dependency
+			log.Fatalf("Dependency cycle detected in the following component: %s", from)
+		}
+		// if it's indeed internal library than take it
+		if r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg {
+			return rel(r.Label, from)
+		}
 	}
+
+	// There are no internal libraries, so let's look for a regular library
+	spec = resolve.ImportSpec{gazelleCabalName, packageName}
+	res = ix.FindRulesByImport(spec, gazelleCabalName)
+
+	if len(res) > 1 {
+		// There are at least two cabal pkgs with the same name
+		log.Fatalf("Multiple labels found under %s for package $s : %s", from, packageName, res)
+	}
+
+	// We take the dep we've found locally...
+	if len(res) == 1 {
+		return rel(res[0].Label, from)
+	}
+
+	// or we take the dep from the repository
+	return rel(label.New(packageRepo, "", packageName), from)
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -368,10 +393,4 @@ func initUpdateReposConfig(c *config.Config, cexts []config.Configurer) {
 			log.Fatal(err)
 		}
 	}
-}
-
-func SetArrayAttr(r *rule.Rule, attrName string, arr []string) {
-    if len(arr) > 0 {
-        r.SetAttr(attrName, arr)
-    }
 }

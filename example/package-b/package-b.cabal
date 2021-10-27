@@ -8,12 +8,27 @@ maintainer:         facundo.dominguez@tweag.io
 extra-source-files: CHANGELOG.md
 data-files: CHANGELOG.md
 
+library sublib
+    exposed-modules:
+      Sublibrary.SLib
+    build-depends:
+      base,
+      text
+    hs-source-dirs: slib
+    default-language: Haskell2010
+
+library mtl
+     build-depends:
+       sublib
+     default-language: Haskell2010
+
 library
     exposed-modules:
       PackageB.Exposed.A
     other-modules:
       PackageB.Other.B
     build-depends:
+      mtl,
       base,
       package-a,
       void

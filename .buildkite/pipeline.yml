@@ -25,6 +25,16 @@ steps:
       grep -q a-haskell-binary package-a/BUILD.bazel
       echo grep -q haskell_toolchain_library package-a/BUILD.bazel
       grep -q haskell_toolchain_library package-a/BUILD.bazel
+      # Test sublibrary support
+      bash -cx "grep -q \"sublib\" package-b/BUILD.bazel"
+      bash -cx "grep -q \"mtl\" package-b/BUILD.bazel"
+      # Test sublibrary shadowing
+      bash -cx "grep -q \":sublib\" package-b/BUILD.bazel"
+      bash -cx "grep -q \":mtl\" package-b/BUILD.bazel"
+      # Test sublibrary local dependency resolution
+      # mtl must be taken from repo not from package-b
+      bash -cx "grep -q \"@stackage//:mtl\" package-a/BUILD.bazel"
+      bash -cx "! grep -q \"//package-b:mtl\" package-a/BUILD.bazel"
       # Test gazelle-update-repos
       nix-shell --pure --run 'bazel run //:gazelle-update-repos'
       nix-shell --pure --run 'bazel test //...'

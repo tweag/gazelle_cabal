@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Cabal2Build.Options
+module CabalScan.Options
   ( Options(..)
   , parseCommandLine
   ) where

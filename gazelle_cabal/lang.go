@@ -139,9 +139,14 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 		prefix = "ghc_plugin:"
 	case "haskell_binary":
 		prefix = "exe:"
+	case "haskell_library":
+		if (r.PrivateAttr("internal_library") != nil) {
+			prefix = "internal_library:"
+		}
 	case "haskell_test":
 		prefix = "test:"
 	}
+
 	return []resolve.ImportSpec{{gazelleCabalName, prefix + r.Name()}}
 }
 
@@ -171,6 +176,10 @@ func (*gazelleCabalLang) GenerateRules(args language.GenerateArgs) language.Gene
 
 	generateResult := infoToRules(args.Config.RepoRoot, ruleInfos)
 
+	if (args.File != nil) {
+		copyPrivateAttrs(generateResult.Gen, args.File.Rules)
+	}
+
 	setVisibilities(args.File, generateResult.Gen)
 
 	return generateResult
@@ -181,7 +190,7 @@ func (lang *gazelleCabalLang) UpdateRepos(args language.UpdateReposArgs) languag
 
 	packageRepo := args.Config.Exts[gazelleCabalName].(Config).HaskellPackageRepo
 	r := rule.NewRule("stack_snapshot", packageRepo)
-	SetArrayAttr(r, "packages", packageList)
+	r.SetAttr("packages", packageList)
 	if len(components) > 0 {
 		r.SetAttr("components", components)
 	}
@@ -211,26 +220,45 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 	}
 }
 
+func copyPrivateAttrs(from []*rule.Rule, to []*rule.Rule) {
+	// Convert slice to map to avoid quadratic runtime
+	toMap := make(map[string]*rule.Rule)
+	for _, r := range to {
+		toMap[r.Name()] = r
+	}
+	for _, rFrom := range from {
+		if rTo, ok := toMap[rFrom.Name()]; ok {
+			for _, key := range rFrom.PrivateAttrKeys() {
+				rTo.SetPrivateAttr(key, rFrom.PrivateAttr(key))
+			}
+		}
+	}
+}
+
 ////////////////////////////////////////////////////
 // rule generating functions
 ////////////////////////////////////////////////////
 
 type RuleInfo struct {
-	Kind       string
-	Name       string
-	Attrs      map[string]interface{}
-	ImportData ImportData
-	CabalFile  string
+	Kind         string
+	Name         string
+	Attrs        map[string]interface{}
+	PrivateAttrs map[string]interface{}
+	ImportData   ImportData
+	CabalFile    string
 }
 
 func infoToRules(repoRoot string, ruleInfos []RuleInfo) language.GenerateResult {
-
 	theRules := make([]*rule.Rule, len(ruleInfos))
 	theImports := make([]interface{}, len(ruleInfos))
 	for i, ruleInfo := range ruleInfos {
 		r := rule.NewRule(ruleInfo.Kind, ruleInfo.Name)
 		for k, v := range ruleInfo.Attrs {
 			r.SetAttr(k, v)
+		}
+
+		for k, v := range ruleInfo.PrivateAttrs {
+			r.SetPrivateAttr(k, v)
 		}
 
 		file, _ := filepath.Rel(repoRoot, ruleInfo.CabalFile)

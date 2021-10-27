@@ -24,6 +24,9 @@ go_library(
 
 go_test(
     name = "gazelle_cabal_test",
-    srcs = ["dependency_resolution_test.go"],
+    srcs = [
+        "dependency_resolution_test.go",
+        "lang_test.go",
+    ],
     embed = [":gazelle_cabal"],
 )

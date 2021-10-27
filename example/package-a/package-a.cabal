@@ -28,6 +28,9 @@ executable package-a
       PackageA.Other.C
     build-depends:
       base,
+      -- mtl added to check that the internal library from package-b
+      -- doesn't shadow dependencies in other pkgs
+      mtl,
       package-a
     ld-options: -optl-pthread
     hs-source-dirs: app
