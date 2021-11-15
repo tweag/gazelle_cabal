@@ -16,6 +16,7 @@ import Control.Exception (Exception, throwIO)
 import Data.List (intersperse)
 import Data.Maybe (catMaybes, maybeToList)
 import Data.Text (Text)
+import Data.Set.Internal (toList)
 import qualified Data.Text as Text
 import qualified Distribution.Compiler as Cabal
 import qualified Distribution.ModuleName as Cabal
@@ -259,8 +260,18 @@ findModulePaths componentName cabalFilePath hsSourceDirs moduleNames = do
       maybe raiseError return maybePath
 
 depPackageNames :: Cabal.BuildInfo -> [Text]
-depPackageNames =
-  map (pkgNameToText . Cabal.depPkgName) . Cabal.targetBuildDepends
+depPackageNames = concatMap depNames . Cabal.targetBuildDepends
+    where
+      depNames :: Cabal.Dependency -> [Text]
+      depNames dep =
+        let
+          pkgName :: Text
+          pkgName = pkgNameToText $ Cabal.depPkgName dep
+          identifierOf :: Cabal.LibraryName -> Text
+          identifierOf (Cabal.LSubLibName name) = pkgName <> ":" <> Text.pack (Cabal.unUnqualComponentName name)
+          identifierOf _ = pkgName
+        in
+          map identifierOf $ toList $ Cabal.depLibraries dep
 
 -- | @findModulePath parentDir hsSourceDirs modulePaths@ finds
 -- the paths of the modules, relative to @hsSourceDirs@.

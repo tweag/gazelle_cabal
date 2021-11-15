@@ -1,4 +1,4 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               package-a
 version:            0.1.0.0
 
@@ -16,7 +16,9 @@ library
       PackageA.Other.E
     build-depends:
       base,
-      inspection-testing
+      inspection-testing,
+      package-b:sublib,
+      package-b
     ghc-options: -Wall -Werror -Wno-orphans
     hs-source-dirs: src
     extra-libraries: m z

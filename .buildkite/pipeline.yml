@@ -31,6 +31,10 @@ steps:
       # Test sublibrary shadowing
       bash -cx "grep -q \":sublib\" package-b/BUILD.bazel"
       bash -cx "grep -q \":mtl\" package-b/BUILD.bazel"
+      # Test public internal library feature
+      bash -cx "grep -q \"//package-b:sublib\" package-a/BUILD.bazel"
+      # Test existence of package-b main lib dependency
+      bash -cx "grep -q \"//package-b\" package-a/BUILD.bazel"
       # Test sublibrary local dependency resolution
       # mtl must be taken from repo not from package-b
       bash -cx "grep -q \"@stackage//:mtl\" package-a/BUILD.bazel"

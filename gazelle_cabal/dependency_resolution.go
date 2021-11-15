@@ -206,14 +206,26 @@ func getPluginLabel(
 	}
 }
 
+// Handle experimental colon syntax in cabal
+// (e.g. public internal library reference: package:sublibName)
+func resolvePackageName(packageName string) (string, string) {
+	splitted := strings.Split(packageName, ":")
+	if len(splitted) > 1 {
+		return splitted[0], splitted[1]
+	}
+	return "", packageName
+}
+
 // Produces a label for the given package. We assume that if no rule
 // is indexed with the package name, the package must come from packageRepo.
 func getPackageLabel(
 	ix *resolve.RuleIndex,
 	packageRepo string,
-	packageName string,
+	pkgName string,
 	from label.Label,
 ) label.Label {
+	parentPackage, packageName := resolvePackageName(pkgName)
+
 	// Search for the rule of an internal library using the prefix "internal_library:" for the key
 	spec := resolve.ImportSpec{gazelleCabalName, "internal_library:" + packageName}
 	res := ix.FindRulesByImport(spec, gazelleCabalName)
@@ -224,8 +236,10 @@ func getPackageLabel(
 			// Cabal produces an error for circular dependency
 			log.Fatalf("Dependency cycle detected in the following component: %s", from)
 		}
-		// if it's indeed internal library than take it
-		if r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg {
+
+		// indeed internal library can be refereced form the package of its definition
+		// or it can be referenced using experimental colon syntax (a.k.a public internal libraries)
+		if (r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg) || (len(parentPackage) > 0) {
 			return rel(r.Label, from)
 		}
 	}
