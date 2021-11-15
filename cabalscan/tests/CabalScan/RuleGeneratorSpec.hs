@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Cabal2Build.RuleGeneratorSpec where
+module CabalScan.RuleGeneratorSpec where
 
 import Test.Hspec
-import Cabal2Build.RuleGenerator (findModulePath)
+import CabalScan.RuleGenerator (findModulePath)
 import qualified Path
 import qualified Path.IO as Path
 
