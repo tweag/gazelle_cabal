@@ -7,6 +7,10 @@ maintainer:         facundo.dominguez@tweag.io
 
 extra-source-files: CHANGELOG.md
 
+library sublib
+    build-depends:
+      package-b:sublib
+
 library
     exposed-modules:
       PackageA.Exposed.A
@@ -17,8 +21,9 @@ library
     build-depends:
       base,
       inspection-testing,
+      sublib,
       package-b:sublib,
-      package-b
+      package-b:package-b
     ghc-options: -Wall -Werror -Wno-orphans
     hs-source-dirs: src
     extra-libraries: m z
