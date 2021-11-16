@@ -23,6 +23,7 @@ library
       inspection-testing,
       sublib,
       package-b:sublib,
+      -- works with either 'package-b' or 'package-b:package-b'
       package-b:package-b
     ghc-options: -Wall -Werror -Wno-orphans
     hs-source-dirs: src
