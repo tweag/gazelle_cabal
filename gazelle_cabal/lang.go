@@ -140,10 +140,12 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 	case "haskell_binary":
 		prefix = "exe:"
 	case "haskell_library":
-	    if r.PrivateAttr("visibility") == "private" {
-			prefix = "private_library:"
+		visibility := r.PrivateAttr("visibility")
+		pkgName := r.PrivateAttr("pkgName")
+	    if visibility == "private" {
+			prefix = fmt.Sprintf("private_library:%s:", pkgName)
 		} else {
-			prefix = "public_library:"
+			prefix = fmt.Sprintf("public_library:%s:", pkgName)
 		}
 	case "haskell_test":
 		prefix = "test:"

@@ -206,15 +206,6 @@ func getPluginLabel(
 	}
 }
 
-// Splits a dependency string into a package name and a library name
-func splitDependencyString(depName string) (string, string) {
-	splitted := strings.Split(depName, ":")
-	if len(splitted) > 1 {
-		return splitted[0], splitted[1]
-	}
-	return "", depName
-}
-
 // Produces a label for the given package. We assume that if no rule
 // is indexed with the package name, the package must come from packageRepo.
 func getPackageLabel(
@@ -223,63 +214,49 @@ func getPackageLabel(
 	pkgName string,
 	from label.Label,
 ) label.Label {
-	var resolvers []func(*resolve.RuleIndex, string, string, label.Label)(label.Label, error)
-	resolvers = append(resolvers,
-		resolveAgainstPrivateLibraries,
-		resolveAgainstPublicLibraries,
-		resolveAgainstRepository,
-	)
-
-	for _, resolver := range resolvers {
-		lbl, err := resolver(ix, packageRepo, pkgName, from)
-		if (err == nil) {
-			return lbl
+	for _, searchScope := range obtainSearchScopes(pkgName, from) {
+		if labelFound, err := searchInLibraries(ix, packageRepo, pkgName, from, searchScope); err == nil {
+			return labelFound
 		}
 	}
 
-	log.Fatalf("Could not resolve dependency '%s' from '%s'", pkgName, from)
-	return label.Label{}
+	return grabFromRepository(packageRepo, pkgName, from)
 }
 
-func resolveAgainstPrivateLibraries(
+// Dependency string may contain 'experimental' colon syntax e.g package-b:sublib
+func obtainSearchScopes(depName string, from label.Label) []string {
+	splitted := strings.Split(depName, ":")
+	publicPrefix := "public_library"
+	privatePrefix := "private_library"
+	format := "%s:%s:%s"
+	if len(splitted) > 1 {
+		cabalPackageId := splitted[0]
+		libraryId      := splitted[1]
+		return []string{
+			// there is prefix which can reference the public or internal library
+	        fmt.Sprintf(format, publicPrefix, cabalPackageId, libraryId),
+			// TODO: potentially throw error if from.Pkg != cabalPackageId?
+			fmt.Sprintf(format, privatePrefix, from.Pkg, libraryId),
+		}
+	}
+
+	return []string{
+		// it can be localally defined library which can be either private or public
+		fmt.Sprintf(format, privatePrefix, from.Pkg, depName),
+		fmt.Sprintf(format, publicPrefix, from.Pkg, depName),
+		// or it can be public, main library from the other package
+		fmt.Sprintf(format, publicPrefix, depName, depName),
+	}
+}
+
+func searchInLibraries(
 	ix *resolve.RuleIndex,
 	packageRepo string,
 	pkgName string,
 	from label.Label,
+	importId string,
 ) (label.Label, error) {
-	parentPackage, depName := splitDependencyString(pkgName)
-
-	if len(parentPackage) > 0 && (parentPackage != depName) {
-		return label.Label{}, fmt.Errorf("It looks like %s is not an internal, private library", pkgName)
-	}
-
-	// Search for the rule of an internal library using the prefix "internal_library:" for the key
-	spec := resolve.ImportSpec{gazelleCabalName, "private_library:" + depName}
-	res := ix.FindRulesByImport(spec, gazelleCabalName)
-
-	// Search for the label of an internal library in the current package
-	for _, r := range res {
-		if r.IsSelfImport(from) {
-			log.Fatalf("Dependency cycle detected in the following component: %s", from)
-		}
-
-		// indeed internal library can be refereced form the package of its definition
-		if (r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg) {
-			return rel(r.Label, from), nil
-		}
-	}
-
-	return label.Label{}, fmt.Errorf("Internal library '%s' not found", pkgName)
-}
-
-func resolveAgainstPublicLibraries(
-	ix *resolve.RuleIndex,
-	packageRepo string,
-	pkgName string,
-	from label.Label,
-) (label.Label, error) {
-	_, depName := splitDependencyString(pkgName)
-	spec := resolve.ImportSpec{gazelleCabalName, "public_library:" + depName}
+	spec := resolve.ImportSpec{gazelleCabalName, importId}
 	res := ix.FindRulesByImport(spec, gazelleCabalName)
 
 	librariesFound := len(res)
@@ -287,21 +264,24 @@ func resolveAgainstPublicLibraries(
 		// There are at least two cabal pkgs with the same name
 		log.Fatalf("Multiple labels found under %s for package $s : %s", from, pkgName, res)
 	}
-	// We take the dep we've found locally...
+	// We take the dep we've found locally, if it's not a circular dependency
 	if librariesFound == 1 {
-		return rel(res[0].Label, from), nil
+		r := res[0]
+		if r.IsSelfImport(from) {
+			log.Fatalf("Dependency cycle detected in the following component: %s", from)
+		}
+		return rel(r.Label, from), nil
 	}
 
-    return label.Label{}, fmt.Errorf("Regular library '%s' not found", pkgName)
+	return label.Label{}, fmt.Errorf("Library '%s' referenced from '%s' not found, %s", pkgName, from, importId)
 }
 
-func resolveAgainstRepository(
-	ix *resolve.RuleIndex,
+func grabFromRepository(
 	packageRepo string,
 	pkgName string,
 	from label.Label,
-) (label.Label, error) {
-	return rel(label.New(packageRepo, "", pkgName), from), nil
+) label.Label {
+	return rel(label.New(packageRepo, "", pkgName), from)
 }
 
 ///////////////////////////////////////////////////////////////////

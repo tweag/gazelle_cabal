@@ -7,9 +7,23 @@ maintainer:         facundo.dominguez@tweag.io
 
 extra-source-files: CHANGELOG.md
 
-library sublib
+library sublibPriv
     build-depends:
       package-b:sublib
+
+library sublibPub
+    visibility: public
+    build-depends:
+      package-c:mtl
+
+library colonPrivate
+    build-depends:
+      package-b:sublib
+
+library colonPublic
+    visibility: public
+    build-depends:
+      package-c:mtl
 
 library
     exposed-modules:
@@ -21,10 +35,21 @@ library
     build-depends:
       base,
       inspection-testing,
-      sublib,
-      package-b:sublib,
-      -- works with either 'package-b' or 'package-b:package-b'
-      package-b:package-b
+      -- reference to internal public library
+      sublibPub,
+      -- referece to internal, private library
+      sublibPriv,
+      -- reference to public, internal library
+      -- from package-b
+      package-b:mtl,
+      -- works with either non colon syntax 'package-c'
+      -- or with colon syntax 'package-b:package-b'
+      package-b:package-b,
+                package-c,
+      -- reference with 'experimental' colon syntax
+      -- both public and private internal library
+      package-a:colonPublic,
+      package-a:colonPrivate
     ghc-options: -Wall -Werror -Wno-orphans
     hs-source-dirs: src
     extra-libraries: m z

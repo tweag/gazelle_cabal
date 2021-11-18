@@ -14,7 +14,7 @@ module CabalScan.RuleGenerator
 
 import Control.Exception (Exception, throwIO)
 import Data.List (intersperse)
-import Data.Maybe (catMaybes, maybeToList)
+import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
 import qualified Data.Text as Text
@@ -41,25 +41,21 @@ import System.FilePath (dropExtension)
 generateRulesForCabalFile :: Path b File -> IO [RuleInfo]
 generateRulesForCabalFile cabalFilePath = do
   pd <- readCabalFile cabalFilePath
-  let library = Cabal.library pd
-      sublibraries = Cabal.subLibraries pd
+  let libraries = Cabal.allLibraries pd
       executables = Cabal.executables pd
       testsuites = Cabal.testSuites pd
       benchmarks = Cabal.benchmarks pd
       pkgId = Cabal.package pd
       dataFiles = Cabal.dataFiles pd
-  mlibraryRule <-
-    traverse (generateLibraryRule cabalFilePath pkgId dataFiles) library
-  sublibraryRules <-
-    traverse (generateLibraryRule cabalFilePath pkgId dataFiles) sublibraries
+  libraryRules <-
+    traverse (generateLibraryRule cabalFilePath pkgId dataFiles) libraries
   executablesRules <-
     traverse (generateBinaryRule cabalFilePath pkgId dataFiles) executables
   testSuiteRules <-
     traverse (generateTestRule cabalFilePath pkgId dataFiles) testsuites
   benchmarkRules <-
     traverse (generateBenchmarkRule cabalFilePath pkgId dataFiles) benchmarks
-  return $ catMaybes $
-    maybeToList mlibraryRule ++ sublibraryRules ++ executablesRules ++ testSuiteRules ++ benchmarkRules
+  return $ catMaybes $ libraryRules ++ executablesRules ++ testSuiteRules ++ benchmarkRules
 
 generateLibraryRule
   :: Path b File
@@ -71,7 +67,7 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
   let libraryName = obtainLibraryName $ Cabal.libName lib
       exposedModules = map Cabal.toFilePath $ Cabal.exposedModules lib
       buildInfo = Cabal.libBuildInfo lib
-      privAttrs = libPrivAttrs lib
+      privAttrs = libPrivAttrs pkgId lib
   generateRule
     cabalFilePath
     pkgId
@@ -215,9 +211,11 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAtt
     toToolName (Cabal.ExeDependency pkg exe _) =
       ToolName (pkgNameToText pkg) (Text.pack $ Cabal.unUnqualComponentName exe)
 
-libPrivAttrs :: Cabal.Library -> Attributes
-libPrivAttrs lib = [ ("visibility", obtainVisibilityAttr) ]
-  where obtainVisibilityAttr = TextValue $ case Cabal.libVisibility lib of
+libPrivAttrs :: Cabal.PackageIdentifier -> Cabal.Library -> Attributes
+libPrivAttrs pkgId lib = [ ("visibility", obtainVisibilityAttr), ("pkgName", packageName) ]
+  where
+    packageName = TextValue . pkgNameToText $ Cabal.pkgName pkgId
+    obtainVisibilityAttr = TextValue $ case Cabal.libVisibility lib of
                                              Cabal.LibraryVisibilityPrivate -> "private"
                                              _                              -> "public"
 
