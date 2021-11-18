@@ -234,7 +234,7 @@ func obtainSearchScopes(depName string, from label.Label) []string {
 		libraryId      := splitted[1]
 		return []string{
 			// there is prefix which can reference the public or internal library
-	        fmt.Sprintf(format, publicPrefix, cabalPackageId, libraryId),
+			fmt.Sprintf(format, publicPrefix, cabalPackageId, libraryId),
 			// TODO: potentially throw error if from.Pkg != cabalPackageId?
 			fmt.Sprintf(format, privatePrefix, from.Pkg, libraryId),
 		}
