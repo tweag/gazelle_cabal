@@ -6,6 +6,7 @@ go_library(
         "dependency_resolution.go",
         "lang.go",
     ],
+    data = ["@io_tweag_gazelle_cabal//cabalscan"],
     importpath = "github.com/tweag/gazelle_cabal/gazelle_cabal",
     visibility = ["//visibility:public"],
     deps = [

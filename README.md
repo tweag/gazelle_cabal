@@ -64,7 +64,6 @@ load(
 
 gazelle(
     name = "gazelle",
-    data = ["@io_tweag_gazelle_cabal//cabalscan"],
     gazelle = ":gazelle_binary",
 )
 
@@ -91,7 +90,6 @@ the following to one of your build files
 gazelle(
     name = "gazelle-update-repos",
     command = "update-repos",
-    data = ["@io_tweag_gazelle_cabal//cabalscan"],
     extra_args = [
         "-lang",
         "gazelle_cabal",
