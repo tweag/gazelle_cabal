@@ -56,7 +56,7 @@ func setToolsAttribute(
 // definitions for tools. Adds unresolved extra libraries as -llib
 // flags.
 func setCompilerFlagsAttribute(
-	extraLibrariesMap map[string]string,
+	unresolvedExtraLibraries []string,
 	toolRepo string,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
@@ -70,7 +70,8 @@ func setCompilerFlagsAttribute(
 	ghcOpts := make([]string, 0, ghcOptsSize)
 
 	dropToolMacroDefs(importData.GhcOpts, importData.Tools, &ghcOpts)
-	addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &ghcOpts)
+	addLibraryFlags(unresolvedExtraLibraries, &compilerFlags)
+	// addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &ghcOpts)
 	addMacroDefs(ix, toolRepo, importData.Tools, from, &ghcOpts)
 	SetAttrIfNotEmpty(r, "ghcopts", ghcOpts)
 }
@@ -105,16 +106,9 @@ func addMacroDefs(
 }
 
 // Adds unresolved extra libraries as -llib flags.
-func addLibraryFlags(
-	extraLibrariesMap map[string]string,
-	extraLibraries []string,
-	ys *[]string,
-) {
-	for _, lib := range extraLibraries {
-		_, ok := extraLibrariesMap[lib]
-		if !ok {
-			*ys = append(*ys, "-l"+lib)
-		}
+func addLibraryFlags(unresolvedExtraLibraries []string, ys *[]string) {
+	for _, lib := range unresolvedExtraLibraries {
+		*ys = append(*ys, "-l"+lib)
 	}
 }
 
@@ -162,14 +156,14 @@ func rel(lbl label.Label, from label.Label) label.Label {
 // haskell_library are assumed to be local. There rest of the
 // dependencies are assumed to come from packageRepo.
 func setDepsAndPluginsAttributes(
-	extraLibraries map[string]string,
+    extraLibraries []label.Label,
 	packageRepo string,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
 	importData ImportData,
 	from label.Label,
 ) {
-	deps := make([]string, 0, len(importData.Deps)+len(importData.ExtraLibraries))
+	deps := make([]string, 0, len(importData.Deps)+len(extraLibraries))
 	plugins := make([]string, 0, len(importData.Deps))
 	for _, depName := range importData.Deps {
 		plugin, err := getPluginLabel(ix, depName, from)
@@ -180,14 +174,27 @@ func setDepsAndPluginsAttributes(
 			deps = append(deps, haskellPkg.String())
 		}
 	}
-	for _, lib := range importData.ExtraLibraries {
-		libLabel, ok := extraLibraries[lib]
-		if ok {
-			deps = append(deps, libLabel)
-		}
+	for _, lbl := range extraLibraries {
+		deps = append(deps, lbl.String())
 	}
 	SetAttrIfNotEmpty(r, "deps", deps)
 	SetAttrIfNotEmpty(r, "plugins", plugins)
+}
+
+// Yields the labels of the extra libraries and the names of the unresolved extra libraries
+func getExtraLibraryLabels(c *config.Config, extraLibraries []string) ([]label.Label, []string) {
+	foundExtraLibraryLabels := make([]label.Label, 0, len(extraLibraries))
+	unresolvedExtraLibraries := make([]string, 0, len(extraLibraries))
+	for _, lib := range extraLibraries {
+		spec := resolve.ImportSpec{gazelleCabalName, lib}
+		libLabel, ok := resolve.FindRuleWithOverride(c, spec, gazelleCabalName)
+		if ok {
+			foundExtraLibraryLabels = append(foundExtraLibraryLabels, libLabel)
+		} else {
+			unresolvedExtraLibraries = append(unresolvedExtraLibraries, lib)
+		}
+	}
+	return foundExtraLibraryLabels, unresolvedExtraLibraries
 }
 
 // Produces a plugin label if there is a ghc_plugin rule with the

@@ -108,7 +108,7 @@ rule need to be written by the user.
 ## Directives
 
 ```python
-# gazelle:cabal_extra_libraries sodium=@libsodium//:libsodium
+# gazelle:resolve gazelle_cabal sodium @libsodium//:libsodium
 ```
 Maps names in the Cabal file's `extra-libraries` field to Bazel
 labels. The labels are added to the `deps` attribute of the
