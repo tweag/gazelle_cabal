@@ -10,7 +10,6 @@ load("@rules_haskell//haskell:defs.bzl", "ghc_plugin")
 # gazelle:cabal_haskell_package_repo stackage-b
 gazelle(
     name = "gazelle",
-    data = ["@io_tweag_gazelle_cabal//cabalscan"],
     gazelle = ":gazelle_binary",
 )
 
@@ -22,7 +21,6 @@ gazelle_binary(
 gazelle(
     name = "gazelle-update-repos",
     command = "update-repos",
-    data = ["@io_tweag_gazelle_cabal//cabalscan"],
     extra_args = [
         "-lang",
         "gazelle_cabal",
