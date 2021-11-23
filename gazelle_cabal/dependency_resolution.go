@@ -176,7 +176,7 @@ func setDepsAndPluginsAttributes(
 		if err == nil {
 			plugins = append(plugins, plugin.String())
 		} else {
-			haskellPkg := getPackageLabel(ix, packageRepo, depName, from)
+			haskellPkg := getPackageLabel(r, ix, packageRepo, depName, from)
 			deps = append(deps, haskellPkg.String())
 		}
 	}
@@ -209,43 +209,55 @@ func getPluginLabel(
 // Produces a label for the given package. We assume that if no rule
 // is indexed with the package name, the package must come from packageRepo.
 func getPackageLabel(
+	r *rule.Rule,
 	ix *resolve.RuleIndex,
 	packageRepo string,
 	pkgName string,
 	from label.Label,
 ) label.Label {
-	for _, searchScope := range obtainSearchScopes(pkgName, from) {
+
+	cabalPkgName := r.PrivateAttr("pkgName").(string)
+	for _, searchScope := range getRuleIndexKey(pkgName, from, cabalPkgName) {
 		if labelFound, err := searchInLibraries(ix, packageRepo, pkgName, from, searchScope); err == nil {
 			return labelFound
 		}
 	}
 
-	return grabFromRepository(packageRepo, pkgName, from)
+	// grab from repository
+	return rel(label.New(packageRepo, "", pkgName), from)//grabFromRepository(packageRepo, pkgName, from)
 }
 
-// Dependency string may contain 'experimental' colon syntax e.g package-b:sublib
-func obtainSearchScopes(depName string, from label.Label) []string {
+// Produces the key to search the label of a library (either internal or public).
+func getRuleIndexKey(depName string, from label.Label, cabalPkgName string) []string {
 	splitted := strings.Split(depName, ":")
 	publicPrefix := "public_library"
 	privatePrefix := "private_library"
 	format := "%s:%s:%s"
-	if len(splitted) > 1 {
-		cabalPackageId := splitted[0]
-		libraryId      := splitted[1]
+	if len(splitted) <= 1 {
+		// no colon prefix detected
 		return []string{
-			// there is prefix which can reference the public or internal library
-			fmt.Sprintf(format, publicPrefix, cabalPackageId, libraryId),
-			// TODO: potentially throw error if from.Pkg != cabalPackageId?
-			fmt.Sprintf(format, privatePrefix, from.Pkg, libraryId),
+			// it is localally defined, named library which can be either private or public
+			fmt.Sprintf(format, privatePrefix, cabalPkgName, depName),
+			fmt.Sprintf(format, publicPrefix, cabalPkgName, depName),
+			// or it can be public, main library from the other package
+			fmt.Sprintf(format, publicPrefix, depName, depName),
 		}
 	}
 
+	// colon prefix detected
+	cabalPackageName := splitted[0]
+	libraryName := splitted[1]
+	if (cabalPackageName == cabalPkgName) {
+		// prefix leads to the internal library (either public or not)
+		return []string{
+			fmt.Sprintf(format, privatePrefix, cabalPackageName, libraryName),
+			fmt.Sprintf(format, publicPrefix, cabalPackageName, libraryName),
+		}
+	}
+
+	// prefix leads to the public library from other package
 	return []string{
-		// it can be localally defined library which can be either private or public
-		fmt.Sprintf(format, privatePrefix, from.Pkg, depName),
-		fmt.Sprintf(format, publicPrefix, from.Pkg, depName),
-		// or it can be public, main library from the other package
-		fmt.Sprintf(format, publicPrefix, depName, depName),
+		fmt.Sprintf(format, publicPrefix, cabalPackageName, libraryName),
 	}
 }
 
@@ -274,14 +286,6 @@ func searchInLibraries(
 	}
 
 	return label.Label{}, fmt.Errorf("Library '%s' referenced from '%s' not found, %s", pkgName, from, importId)
-}
-
-func grabFromRepository(
-	packageRepo string,
-	pkgName string,
-	from label.Label,
-) label.Label {
-	return rel(label.New(packageRepo, "", pkgName), from)
 }
 
 ///////////////////////////////////////////////////////////////////

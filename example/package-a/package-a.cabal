@@ -9,21 +9,21 @@ extra-source-files: CHANGELOG.md
 
 library sublibPriv
     build-depends:
-      package-b:sublib
+      base
 
 library sublibPub
     visibility: public
     build-depends:
-      package-c:mtl
+      base
 
-library colonPrivate
+library colonPriv
     build-depends:
-      package-b:sublib
+      base
 
-library colonPublic
+library colonPub
     visibility: public
     build-depends:
-      package-c:mtl
+      base
 
 library
     exposed-modules:
@@ -35,21 +35,25 @@ library
     build-depends:
       base,
       inspection-testing,
-      -- reference to internal public library
+      -- reference to internal
+      -- public and private libraries
       sublibPub,
-      -- referece to internal, private library
       sublibPriv,
+      -- reference with 'experimental' colon syntax
+      -- both public and private internal library
+      package-a:{colonPub, colonPriv},
+      -- package-a:colonPrivate,
       -- reference to public, internal library
       -- from package-b
-      package-b:mtl,
+      package-b:sublibPub,
+      -- reference to main libraries from other packages
       -- works with either non colon syntax 'package-c'
       -- or with colon syntax 'package-b:package-b'
       package-b:package-b,
-                package-c,
-      -- reference with 'experimental' colon syntax
-      -- both public and private internal library
-      package-a:colonPublic,
-      package-a:colonPrivate
+      package-c,
+      -- reference repository library
+      -- with 'experimental' colon syntax
+      tasty:tasty
     ghc-options: -Wall -Werror -Wno-orphans
     hs-source-dirs: src
     extra-libraries: m z

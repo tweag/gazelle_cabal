@@ -98,6 +98,7 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
           exeName
       buildInfo = Cabal.buildInfo executable
       mainis = [dropExtension (Cabal.modulePath executable)]
+      privAttrs = pkgNamePrivAttr pkgId
   generateRule
     cabalFilePath
     pkgId
@@ -106,7 +107,7 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
     mainis
     EXE
     targetName
-    []
+    privAttrs
 
 generateTestRule
   :: Path b File
@@ -120,6 +121,7 @@ generateTestRule cabalFilePath pkgId dataFiles testsuite = do
       mainis = [ dropExtension path
                | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite]
                ]
+      privAttrs = pkgNamePrivAttr pkgId
   generateRule
     cabalFilePath
     pkgId
@@ -128,7 +130,7 @@ generateTestRule cabalFilePath pkgId dataFiles testsuite = do
     mainis
     TEST
     testName
-    []
+    privAttrs
 
 generateBenchmarkRule
   :: Path b File
@@ -142,6 +144,7 @@ generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
       mainis = [ dropExtension path
                | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]
                ]
+      privAttrs = pkgNamePrivAttr pkgId
   generateRule
     cabalFilePath
     pkgId
@@ -150,7 +153,7 @@ generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
     mainis
     BENCH
     benchName
-    []
+    privAttrs
 
 generateRule
   :: Path b File
@@ -211,10 +214,15 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAtt
     toToolName (Cabal.ExeDependency pkg exe _) =
       ToolName (pkgNameToText pkg) (Text.pack $ Cabal.unUnqualComponentName exe)
 
+pkgNamePrivAttr :: Cabal.PackageIdentifier -> Attributes
+pkgNamePrivAttr pkgId = [ ("pkgName", packageName) ]
+  where packageName = TextValue . pkgNameToText $ Cabal.pkgName pkgId
+
 libPrivAttrs :: Cabal.PackageIdentifier -> Cabal.Library -> Attributes
-libPrivAttrs pkgId lib = [ ("visibility", obtainVisibilityAttr), ("pkgName", packageName) ]
+libPrivAttrs pkgId lib = pkgNameAttr ++ visibilityAttr
   where
-    packageName = TextValue . pkgNameToText $ Cabal.pkgName pkgId
+    pkgNameAttr = pkgNamePrivAttr pkgId
+    visibilityAttr = [ ("visibility", obtainVisibilityAttr) ]
     obtainVisibilityAttr = TextValue $ case Cabal.libVisibility lib of
                                              Cabal.LibraryVisibilityPrivate -> "private"
                                              _                              -> "public"

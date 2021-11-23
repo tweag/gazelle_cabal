@@ -25,20 +25,38 @@ steps:
       grep -q a-haskell-binary package-a/BUILD.bazel
       echo grep -q haskell_toolchain_library package-a/BUILD.bazel
       grep -q haskell_toolchain_library package-a/BUILD.bazel
-      # Test sublibrary support
-      bash -cx "grep -q \"sublib\" package-b/BUILD.bazel"
+      # Test sublibrary generation
+      bash -cx "grep -q \"sublibPub\" package-b/BUILD.bazel"
       bash -cx "grep -q \"mtl\" package-b/BUILD.bazel"
       # Test sublibrary shadowing
-      bash -cx "grep -q \":sublib\" package-b/BUILD.bazel"
+      bash -cx "grep -q \":sublibPub\" package-b/BUILD.bazel"
       bash -cx "grep -q \":mtl\" package-b/BUILD.bazel"
       # Test public internal library feature
-      bash -cx "grep -q \"//package-b:sublib\" package-a/BUILD.bazel"
+      bash -cx "grep -q \"//package-b:sublibPub\" package-a/BUILD.bazel"
+      # Test dependency on local libraries (the same name)
+      bash -cx "grep -q \":sublibPub\" package-a/BUILD.bazel"
+      bash -cx "grep -q \":sublibPriv\" package-a/BUILD.bazel"
+      # Test dependency on local libraries (the same name)
+      # with experimental colon syntax
+      bash -cx "grep -q \":colonPub\" package-a/BUILD.bazel"
+      bash -cx "grep -q \":colonPriv\" package-a/BUILD.bazel"
       # Test existence of package-b main lib dependency
+      # referenced with colon syntax: package-b:package-b
       bash -cx "grep -q \"//package-b\" package-a/BUILD.bazel"
+      # Test existence of package-c main library
+      # referenced without colon syntax: package-c
+      bash -cx "grep -q \"//package-c\" package-a/BUILD.bazel"
+      # Test that unknown libraries referenced with colon syntax
+      # are resolved against repository
+      bash -cx "grep -q \"@stackage//:tasty\" package-a/BUILD.bazel"
       # Test sublibrary local dependency resolution
       # mtl must be taken from repo not from package-b
       bash -cx "grep -q \"@stackage//:mtl\" package-a/BUILD.bazel"
       bash -cx "! grep -q \"//package-b:mtl\" package-a/BUILD.bazel"
+      # Test that colon syntax allows to reference both
+      # local and other package dependency
+      bash -cx "grep -q \":mtl\" package-b/BUILD.bazel"
+      bash -cx "grep -q \"//package-c:mtl\" package-b/BUILD.bazel"
       # Test gazelle-update-repos
       nix-shell --pure --run 'bazel run //:gazelle-update-repos'
       nix-shell --pure --run 'bazel test //...'
