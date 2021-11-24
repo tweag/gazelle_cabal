@@ -49,7 +49,7 @@ func setToolsAttribute(
 		tools = append(tools, toolLabel.String())
 	}
 
-	r.SetAttr("tools", tools)
+	SetAttrIfEmpty(r, "tools", tools)
 }
 
 // Drops preexisting macro definitions for tools. Adds new macro
@@ -72,7 +72,7 @@ func setCompilerFlagsAttribute(
 	dropToolMacroDefs(importData.CompilerFlags, importData.Tools, &compilerFlags)
 	addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &compilerFlags)
 	addMacroDefs(ix, toolRepo, importData.Tools, from, &compilerFlags)
-	r.SetAttr("compiler_flags", compilerFlags)
+	SetAttrIfEmpty(r, "compiler_flags", compilerFlags)
 }
 
 // Drops from xs all of the macro definitions for the given tools
@@ -186,8 +186,8 @@ func setDepsAndPluginsAttributes(
 			deps = append(deps, libLabel)
 		}
 	}
-	r.SetAttr("deps", deps)
-	r.SetAttr("plugins", plugins)
+	SetAttrIfEmpty(r, "deps", deps)
+	SetAttrIfEmpty(r, "plugins", plugins)
 }
 
 // Produces a plugin label if there is a ghc_plugin rule with the
@@ -286,6 +286,12 @@ func searchInLibraries(
 	}
 
 	return label.Label{}, fmt.Errorf("Library '%s' referenced from '%s' not found, %s", pkgName, from, importId)
+}
+
+func SetAttrIfEmpty(r *rule.Rule, attr string, values []string) {
+	if len(values) > 0 {
+		r.SetAttr(attr, values)
+	}
 }
 
 ///////////////////////////////////////////////////////////////////
