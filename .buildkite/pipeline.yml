@@ -47,7 +47,7 @@ steps:
       # referenced without colon syntax: package-c
       bash -cx "grep -q \"//package-c\" package-a/BUILD.bazel"
       # Test that unknown libraries referenced with colon syntax
-      # are resolved against repository
+      # are resolved from repository
       bash -cx "grep -q \"@stackage//:tasty\" package-a/BUILD.bazel"
       # Test sublibrary local dependency resolution
       # mtl must be taken from repo not from package-b

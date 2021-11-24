@@ -217,18 +217,18 @@ func getPackageLabel(
 ) label.Label {
 
 	cabalPkgName := r.PrivateAttr("pkgName").(string)
-	for _, searchScope := range getRuleIndexKey(pkgName, from, cabalPkgName) {
+	for _, searchScope := range getRuleIndexKeys(pkgName, from, cabalPkgName) {
 		if labelFound, err := searchInLibraries(ix, packageRepo, pkgName, from, searchScope); err == nil {
 			return labelFound
 		}
 	}
 
 	// grab from repository
-	return rel(label.New(packageRepo, "", pkgName), from)//grabFromRepository(packageRepo, pkgName, from)
+	return rel(label.New(packageRepo, "", pkgName), from)
 }
 
 // Produces the key to search the label of a library (either internal or public).
-func getRuleIndexKey(depName string, from label.Label, cabalPkgName string) []string {
+func getRuleIndexKeys(depName string, from label.Label, cabalPkgName string) []string {
 	splitted := strings.Split(depName, ":")
 	publicPrefix := "public_library"
 	privatePrefix := "private_library"
@@ -236,28 +236,28 @@ func getRuleIndexKey(depName string, from label.Label, cabalPkgName string) []st
 	if len(splitted) <= 1 {
 		// no colon prefix detected
 		return []string{
-			// it is localally defined, named library which can be either private or public
+			// it is a locally defined, named library which can be either
 			fmt.Sprintf(format, privatePrefix, cabalPkgName, depName),
 			fmt.Sprintf(format, publicPrefix, cabalPkgName, depName),
-			// or it can be public, main library from the other package
+			// or it can be a public, main library from another package
 			fmt.Sprintf(format, publicPrefix, depName, depName),
 		}
 	}
 
 	// colon prefix detected
-	cabalPackageName := splitted[0]
+	packagePrefix := splitted[0]
 	libraryName := splitted[1]
-	if (cabalPackageName == cabalPkgName) {
-		// prefix leads to the internal library (either public or not)
+	if (packagePrefix == cabalPkgName) {
+		// the package prefix leads to a sub-library of the same package
 		return []string{
-			fmt.Sprintf(format, privatePrefix, cabalPackageName, libraryName),
-			fmt.Sprintf(format, publicPrefix, cabalPackageName, libraryName),
+			fmt.Sprintf(format, privatePrefix, packagePrefix, libraryName),
+			fmt.Sprintf(format, publicPrefix, packagePrefix, libraryName),
 		}
 	}
 
-	// prefix leads to the public library from other package
+	// the prefix leads to a sub-library from another package
 	return []string{
-		fmt.Sprintf(format, publicPrefix, cabalPackageName, libraryName),
+		fmt.Sprintf(format, publicPrefix, packagePrefix, libraryName),
 	}
 }
 
