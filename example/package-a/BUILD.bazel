@@ -1,4 +1,4 @@
-load("@rules_haskell//haskell:defs.bzl", "haskell_binary", "haskell_library", "haskell_toolchain_library")
+load("@rules_haskell//haskell:defs.bzl", "haskell_binary", "haskell_toolchain_library")
 
 # Testing that rules marked with "keep" aren't removed by
 # gazelle diff
@@ -48,151 +48,15 @@ haskell_binary(
 # rule generated from package-a/package-a.cabal by gazelle_cabal
 haskell_binary(
     name = "bench-b",
-    srcs = [
-        "app/MainB.hs",
-        "app/PackageA/Other/C.hs",
-    ],
     compiler_flags = [
         "-DSOME_VALUE=1",  # keep
-        "-DVERSION_package_a=\"0.1.0.0\"",
     ],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
     # base is left out of the dependencies in the cabal file but it
     # is needed for building.
     # We keep it here to check that we can keep dependencies.
     #
     # Similarly, we test "keep" in compiler_flags above, too.
     deps = [
-        ":package-a",
         "@stackage//:base",  # keep
-    ],
-)
-
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_library(
-    name = "package-a",
-    srcs = [
-        "src/PackageA/Exposed/A.hs",
-        "src/PackageA/Other/B.hs",
-        "src/PackageA/Other/D.lhs",
-        "src/PackageA/Other/E.hsc",
-    ],
-    compiler_flags = [
-        "-DVERSION_package_a=\"0.1.0.0\"",
-        "-Wall",
-        "-Werror",
-        "-Wno-orphans",
-        "-lm",
-    ],
-    hidden_modules = [
-        "PackageA.Other.B",
-        "PackageA.Other.D",
-        "PackageA.Other.E",
-    ],
-    plugins = ["//:inspection-testing-plugin"],
-    tools = [],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":colonPrivate",
-        ":colonPublic",
-        ":sublibPriv",
-        ":sublibPub",
-        "//package-b",
-        "//package-b:mtl",
-        "//package-c",
-        "@stackage//:base",
-        "@stackage//:tasty",
-        "@stackage//:tasty:fantastic",
-        "@zlib.dev//:zlib",
-    ],
-)
-
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_library(
-    name = "sublibPriv",
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
-    hidden_modules = [],
-    plugins = [],
-    tools = [],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
-    deps = ["//package-b:sublib"],
-)
-
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_library(
-    name = "sublibPub",
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
-    hidden_modules = [],
-    plugins = [],
-    tools = [],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
-    deps = ["//package-c:mtl"],
-)
-
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_library(
-    name = "colonPrivate",
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
-    hidden_modules = [],
-    plugins = [],
-    tools = [],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
-    deps = ["//package-b:sublib"],
-)
-
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_library(
-    name = "colonPublic",
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
-    hidden_modules = [],
-    plugins = [],
-    tools = [],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
-    deps = ["//package-c:mtl"],
-)
-
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_binary(
-    name = "package-a-binary",
-    srcs = [
-        "app/Main.hs",
-        "app/PackageA/Other/C.hs",
-    ],
-    compiler_flags = [
-        "-DVERSION_package_a=\"0.1.0.0\"",
-        "-optl-pthread",
-    ],
-    plugins = [],
-    tools = [],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":package-a",
-        "@stackage//:base",
-        "@stackage//:mtl",
-    ],
-)
-
-# rule generated from package-a/package-a.cabal by gazelle_cabal
-haskell_binary(
-    name = "bench-a",
-    srcs = [
-        "app/Main.hs",
-        "app/PackageA/Other/C.hs",
-    ],
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
-    plugins = [],
-    tools = [],
-    version = "0.1.0.0",
-    visibility = ["//visibility:public"],
-    deps = [
-        ":package-a",
-        "@stackage//:base",
     ],
 )
