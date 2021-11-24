@@ -1,4 +1,4 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               package-a
 version:            0.1.0.0
 
@@ -6,6 +6,24 @@ author:             Facundo Domínguez
 maintainer:         facundo.dominguez@tweag.io
 
 extra-source-files: CHANGELOG.md
+
+library sublibPriv
+    build-depends:
+      base
+
+library sublibPub
+    visibility: public
+    build-depends:
+      base
+
+library colonPriv
+    build-depends:
+      base
+
+library colonPub
+    visibility: public
+    build-depends:
+      base
 
 library
     exposed-modules:
@@ -16,7 +34,26 @@ library
       PackageA.Other.E
     build-depends:
       base,
-      inspection-testing
+      inspection-testing,
+      -- reference to internal
+      -- public and private libraries
+      sublibPub,
+      sublibPriv,
+      -- reference with 'experimental' colon syntax
+      -- both public and private internal library
+      package-a:{colonPub, colonPriv},
+      -- package-a:colonPrivate,
+      -- reference to public, internal library
+      -- from package-b
+      package-b:sublibPub,
+      -- reference to main libraries from other packages
+      -- works with either non colon syntax 'package-c'
+      -- or with colon syntax 'package-b:package-b'
+      package-b:package-b,
+      package-c,
+      -- reference repository library
+      -- with 'experimental' colon syntax
+      tasty:tasty
     ghc-options: -Wall -Werror -Wno-orphans
     hs-source-dirs: src
     extra-libraries: m z

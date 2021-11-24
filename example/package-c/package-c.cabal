@@ -1,0 +1,13 @@
+cabal-version:      3.0
+name:               package-c
+version:            0.1.0.0
+
+author:             kczulko
+maintainer:         karol.czulkowski@tweag.io
+
+library mtl
+    visibility: public
+
+library
+    build-depends:    base
+    default-language: Haskell2010

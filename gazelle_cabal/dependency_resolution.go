@@ -176,7 +176,7 @@ func setDepsAndPluginsAttributes(
 		if err == nil {
 			plugins = append(plugins, plugin.String())
 		} else {
-			haskellPkg := getPackageLabel(ix, packageRepo, depName, from)
+			haskellPkg := getPackageLabel(r, ix, packageRepo, depName, from)
 			deps = append(deps, haskellPkg.String())
 		}
 	}
@@ -209,43 +209,83 @@ func getPluginLabel(
 // Produces a label for the given package. We assume that if no rule
 // is indexed with the package name, the package must come from packageRepo.
 func getPackageLabel(
+	r *rule.Rule,
 	ix *resolve.RuleIndex,
 	packageRepo string,
-	packageName string,
+	pkgName string,
 	from label.Label,
 ) label.Label {
-	// Search for the rule of an internal library using the prefix "internal_library:" for the key
-	spec := resolve.ImportSpec{gazelleCabalName, "internal_library:" + packageName}
+
+	cabalPkgName := r.PrivateAttr("pkgName").(string)
+	for _, searchScope := range getRuleIndexKeys(pkgName, from, cabalPkgName) {
+		if labelFound, err := searchInLibraries(ix, packageRepo, pkgName, from, searchScope); err == nil {
+			return labelFound
+		}
+	}
+
+	// grab from repository
+	return rel(label.New(packageRepo, "", pkgName), from)
+}
+
+// Produces the key to search the label of a library (either internal or public).
+func getRuleIndexKeys(depName string, from label.Label, cabalPkgName string) []string {
+	splitted := strings.Split(depName, ":")
+	publicPrefix := "public_library"
+	privatePrefix := "private_library"
+	format := "%s:%s:%s"
+	if len(splitted) <= 1 {
+		// no colon prefix detected
+		return []string{
+			// it is a locally defined, named library which can be either
+			fmt.Sprintf(format, privatePrefix, cabalPkgName, depName),
+			fmt.Sprintf(format, publicPrefix, cabalPkgName, depName),
+			// or it can be a public, main library from another package
+			fmt.Sprintf(format, publicPrefix, depName, depName),
+		}
+	}
+
+	// colon prefix detected
+	packagePrefix := splitted[0]
+	libraryName := splitted[1]
+	if (packagePrefix == cabalPkgName) {
+		// the package prefix leads to a sub-library of the same package
+		return []string{
+			fmt.Sprintf(format, privatePrefix, packagePrefix, libraryName),
+			fmt.Sprintf(format, publicPrefix, packagePrefix, libraryName),
+		}
+	}
+
+	// the prefix leads to a sub-library from another package
+	return []string{
+		fmt.Sprintf(format, publicPrefix, packagePrefix, libraryName),
+	}
+}
+
+func searchInLibraries(
+	ix *resolve.RuleIndex,
+	packageRepo string,
+	pkgName string,
+	from label.Label,
+	importId string,
+) (label.Label, error) {
+	spec := resolve.ImportSpec{gazelleCabalName, importId}
 	res := ix.FindRulesByImport(spec, gazelleCabalName)
 
-	// Search for the label of an internal library in the current package
-	for _, r := range res {
+	librariesFound := len(res)
+	if librariesFound > 1 {
+		// There are at least two cabal pkgs with the same name
+		log.Fatalf("Multiple labels found under %s for package $s : %s", from, pkgName, res)
+	}
+	// We take the dep we've found locally, if it's not a circular dependency
+	if librariesFound == 1 {
+		r := res[0]
 		if r.IsSelfImport(from) {
-			// Cabal produces an error for circular dependency
 			log.Fatalf("Dependency cycle detected in the following component: %s", from)
 		}
-		// if it's indeed internal library than take it
-		if r.Label.Repo == from.Repo && r.Label.Pkg == from.Pkg {
-			return rel(r.Label, from)
-		}
+		return rel(r.Label, from), nil
 	}
 
-	// There are no internal libraries, so let's look for a regular library
-	spec = resolve.ImportSpec{gazelleCabalName, packageName}
-	res = ix.FindRulesByImport(spec, gazelleCabalName)
-
-	if len(res) > 1 {
-		// There are at least two cabal pkgs with the same name
-		log.Fatalf("Multiple labels found under %s for package $s : %s", from, packageName, res)
-	}
-
-	// We take the dep we've found locally...
-	if len(res) == 1 {
-		return rel(res[0].Label, from)
-	}
-
-	// or we take the dep from the repository
-	return rel(label.New(packageRepo, "", packageName), from)
+	return label.Label{}, fmt.Errorf("Library '%s' referenced from '%s' not found, %s", pkgName, from, importId)
 }
 
 ///////////////////////////////////////////////////////////////////
