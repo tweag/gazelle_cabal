@@ -191,7 +191,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAtt
             , ("srcs", StringListValue $ map pathToText $ someModulePaths ++ otherModulePaths)
             ] ++
             [ ("hidden_modules", StringListValue xs)
-            | Just xs <- [hidden_modules]
+            | Just xs@(_:_) <- [hidden_modules]
             ] ++
             [ ("data", StringListValue $ map Text.pack dataFiles)
             | not (null dataFiles)
