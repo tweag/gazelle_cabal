@@ -131,10 +131,10 @@ In general, package names in the `build-depends` field are mapped to
 rule in the current repository with the same name, in which
 case such a target is added to the `deps` attribute instead.
 
-Similar logic applies in case of [internal libraries](internal-libraries)
+Similar logic applies in case of [internal libraries][internal_libraries]
 (a.k.a *sublibraries* or *named libraries*). Additionally, please 
 beware of shadowing feature and the fact that internal libraries with
-cabal's [`visibility:private`](cabal-multiple-libraries) do not leak 
+cabal's [`visibility:private`][cabal_multiple_libraries] do not leak
 outside of the package where they have been defined. However, their
 bazel's `visibility` attribute is by default set to `public`.
 
@@ -230,4 +230,4 @@ Have questions? Need help? Tweet at
 [rules_haskell]: https://github.com/tweag/rules_haskell
 [local_snapshot]: https://api.haskell.build/haskell/cabal.html#stack_snapshot-local_snapshot
 [internal_libraries]: https://cabal.readthedocs.io/en/3.6/cabal-package.html?#sublibs
-[cabal-multiple-libraries]: https://fgaz.me/posts/2019-11-14-cabal-multiple-libraries/
+[cabal_multiple_libraries]: https://fgaz.me/posts/2019-11-14-cabal-multiple-libraries/
