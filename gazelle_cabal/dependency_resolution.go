@@ -49,7 +49,7 @@ func setToolsAttribute(
 		tools = append(tools, toolLabel.String())
 	}
 
-	SetAttrIfEmpty(r, "tools", tools)
+	SetAttrIfNotEmpty(r, "tools", tools)
 }
 
 // Drops preexisting macro definitions for tools. Adds new macro
@@ -72,7 +72,7 @@ func setCompilerFlagsAttribute(
 	dropToolMacroDefs(importData.CompilerFlags, importData.Tools, &compilerFlags)
 	addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &compilerFlags)
 	addMacroDefs(ix, toolRepo, importData.Tools, from, &compilerFlags)
-	SetAttrIfEmpty(r, "compiler_flags", compilerFlags)
+	SetAttrIfNotEmpty(r, "compiler_flags", compilerFlags)
 }
 
 // Drops from xs all of the macro definitions for the given tools
@@ -186,8 +186,8 @@ func setDepsAndPluginsAttributes(
 			deps = append(deps, libLabel)
 		}
 	}
-	SetAttrIfEmpty(r, "deps", deps)
-	SetAttrIfEmpty(r, "plugins", plugins)
+	SetAttrIfNotEmpty(r, "deps", deps)
+	SetAttrIfNotEmpty(r, "plugins", plugins)
 }
 
 // Produces a plugin label if there is a ghc_plugin rule with the
@@ -288,7 +288,7 @@ func searchInLibraries(
 	return label.Label{}, fmt.Errorf("Library '%s' referenced from '%s' not found, %s", pkgName, from, importId)
 }
 
-func SetAttrIfEmpty(r *rule.Rule, attr string, values []string) {
+func SetAttrIfNotEmpty(r *rule.Rule, attr string, values []string) {
 	if len(values) > 0 {
 		r.SetAttr(attr, values)
 	}
