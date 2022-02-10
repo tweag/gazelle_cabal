@@ -48,7 +48,7 @@ haskell_binary(
 # rule generated from package-a/package-a.cabal by gazelle_cabal
 haskell_binary(
     name = "bench-b",
-    main_file = "src/MainB.hs",
+    main_file = "app/MainB.hs",
     compiler_flags = [
         "-DSOME_VALUE=1",  # keep
     ],
