@@ -13,7 +13,6 @@ mkShell {
     binutils
     cacert
     nix
-    git
     openjdk11
     python3
     # convenience dependencies

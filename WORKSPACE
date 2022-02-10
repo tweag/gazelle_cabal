@@ -8,9 +8,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_haskell",
-    sha256 = "851e16edc7c33b977649d66f2f587071dde178a6e5bcfeca5fe9ebbe81924334",
-    strip_prefix = "rules_haskell-0.14",
-    url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.14.tar.gz",
+    sha256 = "427f7363d4b6addafaae1a371d60da6eb0a236b6fb7884d5a087e47e92f55403",
+    strip_prefix = "rules_haskell-f929776456ee3814991c6dcc4d67d15088cb148e",
+    url = "https://github.com/tweag/rules_haskell/archive/f929776456ee3814991c6dcc4d67d15088cb148e.zip",
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
@@ -64,7 +64,7 @@ stack_snapshot(
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path = "haskell.compiler.ghc8104",
     compiler_flags = [
         "-Werror",
         "-Wall",
@@ -73,7 +73,7 @@ haskell_register_ghc_nixpkgs(
         "-Wredundant-constraints",
     ],
     repositories = {"nixpkgs": "@nixpkgs"},
-    version = "8.10.7",
+    version = "8.10.4",
 )
 
 ###############
@@ -82,10 +82,10 @@ haskell_register_ghc_nixpkgs(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "d6b2513456fe2229811da7eb67a444be7785f5323c6708b38d851d2b51e54d83",
+    sha256 = "69de5c704a05ff37862f7e0f5534d4f479418afc21806c887db544a316f3cb6b",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.30.0/rules_go-v0.30.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.30.0/rules_go-v0.30.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
     ],
 )
 
