@@ -388,6 +388,7 @@ func toolsToComponents(tools map[string]map[string]bool) map[string][]string {
 			comps[i+1] = "exe:" + exeName
 			i++
 		}
+		sort.Strings(comps[1:len(comps)])
 		toolMaps[toolPackageName] = comps
 	}
 	return toolMaps

@@ -211,7 +211,7 @@ func TestToolsToComponents(t *testing.T) {
 	}
 	got := toolsToComponents(tools)
 	wanted := map[string][]string{
-		"tasty-discover": []string{"lib", "exe:tasty-discover", "exe:tasty"},
+		"tasty-discover": []string{"lib", "exe:tasty", "exe:tasty-discover"},
 		"hsinspect":      []string{"lib", "exe:hsinspect"},
 	}
 	if !reflect.DeepEqual(got, wanted) {
