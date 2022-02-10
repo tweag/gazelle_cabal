@@ -1,6 +1,6 @@
 # gazelle\_cabal
 
-[![Build status](https://badge.buildkite.com/4529c8b05b4bb481bd50b509acdfb3e5f862b308c8ddbe441d.svg?branch=main)](https://buildkite.com/tweag-1/gazelle-cabal)
+![Build status](https://github.com/tweag/gazelle_cabal/actions/workflows/workflow.yaml/badge.svg?branch=main)
 
 This is a [gazelle][gazelle] extension that generates and
 updates [Haskell rules][rules_haskell] for [Bazel][bazel]
