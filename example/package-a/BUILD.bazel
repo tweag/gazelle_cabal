@@ -10,7 +10,7 @@ haskell_binary(
         "app/Main.hs",
         "app/PackageA/Other/C.hs",
     ],
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    ghcopts = ["-DVERSION_package_a=\"0.1.0.0\""],
     plugins = [],
     tools = [],
     version = "0.1.0.0",
@@ -34,7 +34,7 @@ haskell_binary(
         "app/Main.hs",
         "app/PackageA/Other/C.hs",
     ],
-    compiler_flags = ["-DVERSION_package_a=\"0.1.0.0\""],
+    ghcopts = ["-DVERSION_package_a=\"0.1.0.0\""],
     plugins = [],
     tools = [],
     version = "0.1.0.0",
@@ -48,7 +48,7 @@ haskell_binary(
 # rule generated from package-a/package-a.cabal by gazelle_cabal
 haskell_binary(
     name = "bench-b",
-    compiler_flags = [
+    ghcopts = [
         "-DSOME_VALUE=1",  # keep
     ],
     main_file = "app/MainB.hs",
@@ -56,7 +56,7 @@ haskell_binary(
     # is needed for building.
     # We keep it here to check that we can keep dependencies.
     #
-    # Similarly, we test "keep" in compiler_flags above, too.
+    # Similarly, we test "keep" in ghcopts above, too.
     deps = [
         "@stackage//:base",  # keep
     ],

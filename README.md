@@ -114,7 +114,7 @@ rule need to be written by the user.
 Maps names in the Cabal file's `extra-libraries` field to Bazel
 labels. The labels are added to the `deps` attribute of the
 corresponding rule. Names not mentioned in this directive are
-added to the `compiler_flags` attribute as `-l<name>`.
+added to the `ghcopts` attribute as `-l<name>`.
 
 ```python
 # gazelle:cabal_haskell_package_repo stackage
