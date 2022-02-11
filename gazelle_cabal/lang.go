@@ -93,7 +93,7 @@ var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"compiler_flags": true,
+		"ghcopts":        true,
 		"data":           true,
 		"deps":           true,
 		"plugins":        true,

@@ -23,7 +23,7 @@ haskell_toolchain_library(name = "text")
 haskell_library(
     name = "cabalscan-library",
     srcs = glob(["src/**/*.hs"]),
-    compiler_flags = [
+    ghcopts = [
         "-Wall",
         "-Werror",
     ],
@@ -43,7 +43,7 @@ haskell_library(
 haskell_binary(
     name = "cabalscan",
     srcs = ["exe/Main.hs"],
-    compiler_flags = [
+    ghcopts = [
         "-Wall",
         "-Werror",
     ],
@@ -60,7 +60,7 @@ haskell_binary(
 haskell_test(
     name = "tasty",
     srcs = glob(["tests/**/*.hs"]),
-    compiler_flags = [
+    ghcopts = [
         "-Wall",
         "-Werror",
         "-DTASTY_DISCOVER_TASTY_DISCOVER_PATH=$(location @stackage-exe//tasty-discover)",

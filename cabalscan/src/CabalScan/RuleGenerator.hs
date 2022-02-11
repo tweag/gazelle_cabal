@@ -182,7 +182,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAtt
         , cabalFile = pathToText cabalFilePath
         , importData = ImportData
           { deps
-          , compilerFlags = versionMacro : optionsFromBuildInfo bi
+          , ghcOpts = versionMacro : optionsFromBuildInfo bi
           , extraLibraries = map Text.pack $ Cabal.extraLibs bi
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }

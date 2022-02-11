@@ -26,7 +26,7 @@ import (
 
 type ImportData struct {
 	Deps           []string
-	CompilerFlags  []string
+	GhcOpts        []string
 	ExtraLibraries []string
 	Tools          []ToolName
 }
@@ -63,16 +63,16 @@ func setCompilerFlagsAttribute(
 	importData ImportData,
 	from label.Label,
 ) {
-	compilerFlagsSize :=
+	ghcOptsSize :=
 		len(importData.ExtraLibraries) +
-			len(importData.CompilerFlags) +
+			len(importData.GhcOpts) +
 			len(importData.Tools)
-	compilerFlags := make([]string, 0, compilerFlagsSize)
+	ghcOpts := make([]string, 0, ghcOptsSize)
 
-	dropToolMacroDefs(importData.CompilerFlags, importData.Tools, &compilerFlags)
-	addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &compilerFlags)
-	addMacroDefs(ix, toolRepo, importData.Tools, from, &compilerFlags)
-	SetAttrIfNotEmpty(r, "compiler_flags", compilerFlags)
+	dropToolMacroDefs(importData.GhcOpts, importData.Tools, &ghcOpts)
+	addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &ghcOpts)
+	addMacroDefs(ix, toolRepo, importData.Tools, from, &ghcOpts)
+	SetAttrIfNotEmpty(r, "ghcopts", ghcOpts)
 }
 
 // Drops from xs all of the macro definitions for the given tools

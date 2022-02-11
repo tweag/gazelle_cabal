@@ -17,7 +17,7 @@ import Data.Text (Text)
 -- >   , extraLibraries = ["libsodium"]
 -- >   , tools = [ToolName "tasty-discover" "tasty-discover"]
 -- >   , attrs = [ ("srcs", ["src/Main.hs"])
--- >             , ("compiler_flags", "-DFOO=1")
+-- >             , ("ghcopts", "-DFOO=1")
 -- >             ]
 -- >   , privateAttrs = [ ("internal_library", "true") ]
 -- >   }
@@ -43,7 +43,7 @@ data RuleInfo = RuleInfo
 -- | Attributes relevant for dependency resolution
 data ImportData = ImportData
   { deps :: [Text]
-  , compilerFlags :: [Text]
+  , ghcOpts :: [Text]
   , extraLibraries :: [Text]
   , tools :: [ToolName]
   }
@@ -73,10 +73,10 @@ instance Aeson.ToJSON RuleInfo where
     attrsToJson as = Aeson.object [ (k, Aeson.toJSON v) | (k, v) <- as ]
 
 instance Aeson.ToJSON ImportData where
-  toJSON (ImportData deps compilerFlags extraLibraries tools) =
+  toJSON (ImportData deps ghcOpts extraLibraries tools) =
     Aeson.object
       [ ("deps", Aeson.toJSON deps)
-      , ("compilerFlags", Aeson.toJSON compilerFlags)
+      , ("ghcopts", Aeson.toJSON ghcOpts)
       , ("tools", Aeson.toJSON tools)
       , ("extraLibraries", Aeson.toJSON (StringListValue extraLibraries))
       ]
