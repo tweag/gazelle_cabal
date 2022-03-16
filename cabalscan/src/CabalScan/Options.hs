@@ -9,7 +9,7 @@ import Data.List (intercalate)
 import Path (Abs, File, Path, parseAbsFile)
 import System.Environment
 import System.Exit
-import System.IO (hPutStrLn, stderr)
+import System.IO (hPutStrLn, stderr, stdout, Handle)
 
 type AbsoluteFilepath = Path Abs File
 
@@ -36,9 +36,9 @@ parseArgs (x:xs) fs | x `elem` ["-h", "--help"] = Left PrintHelp
 
 printMsgAndExit :: InvocationError -> IO a
 printMsgAndExit = \case
-  MissingFiles -> putErrLn [missing, usage] *> exitFailure
-  WrongFilePath f -> putErrLn [wrongpath f, usage] *> exitFailure
-  PrintHelp -> putErrLn [info, usage, options] *> exitSuccess
+  MissingFiles -> hPutLn stderr [missing, usage] *> exitFailure
+  WrongFilePath f -> hPutLn stderr [wrongpath f, usage] *> exitFailure
+  PrintHelp -> hPutLn stdout [info, usage, options] *> exitSuccess
   where
     info = unlines ["cabalscan - extract build information from Cabal files"]
     usage = unlines ["Usage: cabalscan CABAL_FILES...",
@@ -47,5 +47,5 @@ printMsgAndExit = \case
                        "-h,--help                Show this help text"]
     missing = unlines ["Missing: CABAL_FILES..."]
     wrongpath p = unlines ["Couldn't parse absolute file path: " ++ p]
-    putErrLn :: [String] -> IO ()
-    putErrLn = hPutStrLn stderr . intercalate "\n"
+    hPutLn :: Handle -> [String] -> IO ()
+    hPutLn h = hPutStrLn h . intercalate "\n"
