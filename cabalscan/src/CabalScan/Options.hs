@@ -40,12 +40,12 @@ printMsgAndExit = \case
   WrongFilePath f -> hPutLn stderr [wrongpath f, usage] *> exitFailure
   PrintHelp -> hPutLn stdout [info, usage, options] *> exitSuccess
   where
-    info = unlines ["cabalscan - extract build information from Cabal files"]
-    usage = unlines ["Usage: cabalscan CABAL_FILES...",
+    info = ["cabalscan - extract build information from Cabal files"]
+    usage = ["Usage: cabalscan CABAL_FILES...",
                      "  Prints in stdout information extracted from Cabal files in JSON format."]
-    options = unlines ["Available options:",
+    options = ["Available options:",
                        "-h,--help                Show this help text"]
-    missing = unlines ["Missing: CABAL_FILES..."]
-    wrongpath p = unlines ["Couldn't parse absolute file path: " ++ p]
-    hPutLn :: Handle -> [String] -> IO ()
-    hPutLn h = hPutStrLn h . intercalate "\n"
+    missing = ["Missing: CABAL_FILES..."]
+    wrongpath p = ["Couldn't parse absolute file path: " ++ p]
+    hPutLn :: Handle -> [[String]] -> IO ()
+    hPutLn h = hPutStrLn h . intercalate "\n" . map unlines
