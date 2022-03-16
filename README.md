@@ -40,7 +40,6 @@ stack_snapshot(
     name = "stackage",
     packages = [
         "aeson", # keep
-        "optparse-applicative", # keep
         "path", # keep
         "path-io", # keep
     ],

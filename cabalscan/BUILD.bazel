@@ -34,7 +34,6 @@ haskell_library(
         ":filepath",
         ":text",
         "@io_tweag_gazelle_cabal_deps//:aeson",
-        "@io_tweag_gazelle_cabal_deps//:optparse-applicative",
         "@io_tweag_gazelle_cabal_deps//:path",
         "@io_tweag_gazelle_cabal_deps//:path-io",
     ],

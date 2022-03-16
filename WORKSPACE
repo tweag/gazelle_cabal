@@ -51,7 +51,6 @@ stack_snapshot(
     packages = [
         "aeson",
         "hspec",
-        "optparse-applicative",
         "path",
         "path-io",
         "tasty",

@@ -7,12 +7,10 @@ def _gazelle_cabal_dependencies_impl(repository_ctx):
 package(default_visibility = ["//visibility:public"])
 
 alias(name="aeson", actual="{aeson}")
-alias(name="optparse-applicative", actual="{optparse_applicative}")
 alias(name="path", actual="{path}")
 alias(name="path-io", actual="{path_io}")
         '''.format(
             aeson = repository_ctx.attr.aeson,
-            optparse_applicative = repository_ctx.attr.optparse_applicative,
             path = repository_ctx.attr.path,
             path_io = repository_ctx.attr.path_io,
         ),
@@ -24,7 +22,6 @@ _gazelle_cabal_dependencies = repository_rule(
     local = True,
     attrs = {
         "aeson": attr.label(default = "@stackage//:aeson"),
-        "optparse_applicative": attr.label(default = "@stackage//:optparse-applicative"),
         "path": attr.label(default = "@stackage//:path"),
         "path_io": attr.label(default = "@stackage//:path-io"),
     },
@@ -47,7 +44,6 @@ def gazelle_cabal_dependencies(**kargs):
       # Dependencies overriden
       gazelle_cabal_dependencies(
           aeson = "@someother//:some-other-aeson",
-          optparse_applicative = "@someother//:optparse-applicative",
           path = "@someother//:some-path",
           path_io = "@someother//:another-path-io",
       )
