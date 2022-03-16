@@ -42,9 +42,9 @@ printMsgAndExit = \case
   where
     info = ["cabalscan - extract build information from Cabal files"]
     usage = ["Usage: cabalscan CABAL_FILES...",
-                     "  Prints in stdout information extracted from Cabal files in JSON format."]
+             "  Prints in stdout information extracted from Cabal files in JSON format."]
     options = ["Available options:",
-                       "-h,--help                Show this help text"]
+               "-h,--help                Show this help text"]
     missing = ["Missing: CABAL_FILES..."]
     wrongpath p = ["Couldn't parse absolute file path: " ++ p]
     hPutLn :: Handle -> [[String]] -> IO ()
