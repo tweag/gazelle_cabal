@@ -12,10 +12,8 @@ import System.Environment
 import System.Exit
 import System.IO (hPutStrLn, stderr, stdout, Handle)
 
-type AbsoluteFilepath = Path Abs File
-
 data Options = Options
-  { cabalFiles :: [AbsoluteFilepath]
+  { cabalFiles :: [Path Abs File]
   }
 
 data InvocationError = MissingFiles | WrongFilePath String | PrintHelp
@@ -27,7 +25,7 @@ parseCommandLine = do
     Right xs -> return (Options {cabalFiles = xs})
     Left err -> printMsgAndExit err
 
-parseArgs :: [String] -> Either InvocationError [AbsoluteFilepath]
+parseArgs :: [String] -> Either InvocationError [Path Abs File]
 parseArgs [] = Left MissingFiles
 parseArgs xs = sequence [check x | x <- xs]
                where
