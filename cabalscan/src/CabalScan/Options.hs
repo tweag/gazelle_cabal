@@ -5,6 +5,7 @@ module CabalScan.Options
   , parseCommandLine
   ) where
 
+import Data.Bifunctor (first)
 import Data.List (intercalate)
 import Path (Abs, File, Path, parseAbsFile)
 import System.Environment
@@ -22,23 +23,22 @@ data InvocationError = MissingFiles | WrongFilePath String | PrintHelp
 parseCommandLine :: IO Options
 parseCommandLine = do
   args <- getArgs
-  case parseArgs args [] of
+  case parseArgs args of
     Right xs -> return (Options {cabalFiles = xs})
     Left err -> printMsgAndExit err
 
-parseArgs :: [String] -> [AbsoluteFilepath] -> Either InvocationError [AbsoluteFilepath]
-parseArgs [] [] = Left MissingFiles
-parseArgs [] xs = Right xs
-parseArgs (x:xs) fs | x `elem` ["-h", "--help"] = Left PrintHelp
-                    | otherwise = case parseAbsFile x of
-                                    Just f -> parseArgs xs (f:fs)
-                                    _      -> Left $ WrongFilePath x
+parseArgs :: [String] -> Either InvocationError [AbsoluteFilepath]
+parseArgs [] = Left MissingFiles
+parseArgs xs = sequence [check x | x <- xs]
+               where
+                 check x | x `elem` ["-h", "--help"] = Left PrintHelp
+                         | otherwise = first (const $ WrongFilePath x) (parseAbsFile x)
 
 printMsgAndExit :: InvocationError -> IO a
 printMsgAndExit = \case
-  MissingFiles -> hPutLn stderr [missing, usage] *> exitFailure
-  WrongFilePath f -> hPutLn stderr [wrongpath f, usage] *> exitFailure
-  PrintHelp -> hPutLn stdout [info, usage, options] *> exitSuccess
+  PrintHelp       -> hPutLn stdout [info, usage, options] *> exitSuccess
+  MissingFiles    -> hPutLn stderr [missing, usage]       *> exitFailure
+  WrongFilePath f -> hPutLn stderr [wrongpath f, usage]   *> exitFailure
   where
     info = ["cabalscan - extract build information from Cabal files"]
     usage = ["Usage: cabalscan CABAL_FILES...",
