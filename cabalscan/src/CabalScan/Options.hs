@@ -5,7 +5,6 @@ module CabalScan.Options
   , parseCommandLine
   ) where
 
-import Data.Bifunctor (first)
 import Data.List (intercalate)
 import Path (Abs, File, Path, parseAbsFile)
 import System.Environment
@@ -27,10 +26,10 @@ parseCommandLine = do
 
 parseArgs :: [String] -> Either InvocationError [Path Abs File]
 parseArgs [] = Left MissingFiles
-parseArgs xs = sequence [check x | x <- xs]
-               where
-                 check x | x `elem` ["-h", "--help"] = Left PrintHelp
-                         | otherwise = first (const $ WrongFilePath x) (parseAbsFile x)
+parseArgs xs
+  | any (`elem` ["-h", "--help"]) xs = Left PrintHelp
+  | otherwise =
+    sequence [ maybe (Left $ WrongFilePath x) Right (parseAbsFile x) | x <- xs ]
 
 printMsgAndExit :: InvocationError -> IO a
 printMsgAndExit = \case
