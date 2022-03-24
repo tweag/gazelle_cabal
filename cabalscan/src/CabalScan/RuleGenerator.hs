@@ -14,7 +14,7 @@ module CabalScan.RuleGenerator
 
 import Control.Exception (Exception, throwIO)
 import Data.List (intersperse)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, maybeToList)
 import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
 import qualified Data.Text as Text
@@ -68,6 +68,7 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
       exposedModules = map Cabal.toFilePath $ Cabal.exposedModules lib
       buildInfo = Cabal.libBuildInfo lib
       privAttrs = libPrivAttrs pkgId lib
+      pubAttrs = []
   generateRule
     cabalFilePath
     pkgId
@@ -76,6 +77,7 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
     exposedModules
     LIB
     libraryName
+    pubAttrs
     privAttrs
   where
     obtainLibraryName :: Cabal.LibraryName -> Text
@@ -97,16 +99,19 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
         else
           exeName
       buildInfo = Cabal.buildInfo executable
-      mainis = [dropExtension (Cabal.modulePath executable)]
+      mainFilePath = Cabal.modulePath executable
+      modules = [dropExtension mainFilePath]
       privAttrs = pkgNamePrivAttr pkgId
+  pubAttrs <- mainFileAttr cabalFilePath mainFilePath buildInfo
   generateRule
     cabalFilePath
     pkgId
     dataFiles
     buildInfo
-    mainis
+    modules
     EXE
     targetName
+    pubAttrs
     privAttrs
 
 generateTestRule
@@ -118,18 +123,19 @@ generateTestRule
 generateTestRule cabalFilePath pkgId dataFiles testsuite = do
   let testName = Text.pack $ Cabal.unUnqualComponentName $ Cabal.testName testsuite
       buildInfo = Cabal.testBuildInfo testsuite
-      mainis = [ dropExtension path
-               | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite]
-               ]
+      mainFile = [ path | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite] ]
+      mainModule = map dropExtension mainFile
       privAttrs = pkgNamePrivAttr pkgId
+  pubAttrs <- fmap concat $ traverse (\mf -> mainFileAttr cabalFilePath mf buildInfo) mainFile
   generateRule
     cabalFilePath
     pkgId
     dataFiles
     buildInfo
-    mainis
+    mainModule
     TEST
     testName
+    pubAttrs
     privAttrs
 
 generateBenchmarkRule
@@ -141,18 +147,19 @@ generateBenchmarkRule
 generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
   let benchName = Text.pack $ Cabal.unUnqualComponentName $ Cabal.benchmarkName benchmark
       buildInfo = Cabal.benchmarkBuildInfo benchmark
-      mainis = [ dropExtension path
-               | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]
-               ]
+      mainFile = [path | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]]
+      mainModule = map dropExtension mainFile
       privAttrs = pkgNamePrivAttr pkgId
+  pubAttrs <- fmap concat $ traverse (\mf -> mainFileAttr cabalFilePath mf buildInfo) mainFile
   generateRule
     cabalFilePath
     pkgId
     dataFiles
     buildInfo
-    mainis
+    mainModule
     BENCH
     benchName
+    pubAttrs
     privAttrs
 
 generateRule
@@ -164,9 +171,10 @@ generateRule
   -> ComponentType
   -> Text
   -> Attributes
+  -> Attributes
   -> IO (Maybe RuleInfo)
-generateRule _ _ _ bi _ _ _ _ | not (Cabal.buildable bi) = return Nothing
-generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAttrs = do
+generateRule _ _ _ bi _ _ _ _ _ | not (Cabal.buildable bi) = return Nothing
+generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName pubAttrs privAttrs = do
   let pkgName = pkgNameToText $ Cabal.pkgName pkgId
       pkgVersion = Text.pack $ Cabal.prettyShow $ Cabal.pkgVersion pkgId
       versionMacro =
@@ -187,6 +195,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAtt
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
         , attrs =
+            pubAttrs ++
             [ ("version", TextValue pkgVersion)
             , ("srcs", StringListValue $ map pathToText $ someModulePaths ++ otherModulePaths)
             ] ++
@@ -213,6 +222,19 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAtt
 
     toToolName (Cabal.ExeDependency pkg exe _) =
       ToolName (pkgNameToText pkg) (Text.pack $ Cabal.unUnqualComponentName exe)
+
+mainFileAttr :: Path b File -> FilePath -> Cabal.BuildInfo -> IO Attributes
+mainFileAttr cabalFilePath mainFilePath bi = do
+  let
+    hsSourceDirs = Cabal.hsSourceDirs bi
+    cabalParentDir = Path.parent cabalFilePath
+    filePathToAttrValue = TextValue . Text.pack . Path.toFilePath
+    pathToMainFileAttr :: Path Rel File -> (Text, AttrValue)
+    pathToMainFileAttr = ((,) "main_file") . filePathToAttrValue
+  mainModulePath <- Path.parseRelFile $ dropExtension mainFilePath
+  srcDirs <- mapM Path.parseRelDir hsSourceDirs
+  pathMaybe <- findModulePath cabalParentDir srcDirs mainModulePath
+  return $ maybeToList $ fmap pathToMainFileAttr pathMaybe
 
 pkgNamePrivAttr :: Cabal.PackageIdentifier -> Attributes
 pkgNamePrivAttr pkgId = [ ("pkgName", packageName) ]
