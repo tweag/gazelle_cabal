@@ -9,12 +9,13 @@
 module CabalScan.RuleGenerator
   ( generateRulesForCabalFile
   -- * Exported for tests
+  , FoundModulePath (..)
   , findModulePath
   ) where
 
 import Control.Exception (Exception, throwIO)
 import Data.List (intersperse)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, maybeToList)
 import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
 import qualified Data.Text as Text
@@ -254,9 +255,9 @@ findModulePaths
   :: Text -> Path b File -> [Path Rel Dir] -> [FilePath] -> IO [Path Rel File]
 findModulePaths componentName cabalFilePath hsSourceDirs moduleNames = do
   modulesAsPaths <- mapM Path.parseRelFile moduleNames
-  mapM findModule modulesAsPaths
+  concat <$> mapM (fmap foundModulePathToPathList . findModule) modulesAsPaths
   where
-    findModule :: Path Rel File -> IO (Path Rel File)
+    findModule :: Path Rel File -> IO FoundModulePath
     findModule modulePath = do
       let cabalDir = Path.parent cabalFilePath
           raiseError = throwIO $ MissingModuleFile
@@ -281,6 +282,20 @@ depPackageNames = concatMap depNames . Cabal.targetBuildDepends
         in
           map identifierOf $ Set.toList $ Cabal.depLibraries dep
 
+data FoundModulePath = FoundModulePath
+  { -- | The path to a module.
+    -- Producers for this must include extension of the file.
+    foundModulePath :: Path Rel File,
+    -- | Every hs file might have a corresponding boot one.
+    -- Producers for this must include extension of the file.
+    foundBootPath :: Maybe (Path Rel File)
+  }
+  deriving (Eq, Show)
+
+foundModulePathToPathList :: FoundModulePath -> [Path Rel File]
+foundModulePathToPathList FoundModulePath {foundModulePath, foundBootPath} =
+  [foundModulePath] ++ maybeToList foundBootPath
+
 -- | @findModulePath parentDir hsSourceDirs modulePaths@ finds
 -- the paths of the modules, relative to @hsSourceDirs@.
 --
@@ -290,7 +305,11 @@ depPackageNames = concatMap depNames . Cabal.targetBuildDepends
 -- to @parentDir@.
 --
 -- The directories in @hsSourceDirs@ must be relative to @parentDir@.
-findModulePath :: Path b Dir -> [Path Rel Dir] -> Path Rel File -> IO (Maybe (Path Rel File))
+
+-- An alternative choice to producing a 'FoundModulePath' would be to instead
+-- return a list of @Path Rel File@s to handle the case when we also have a @.hs-boot@ file.
+-- The version using 'FoundModulePath' is more precise.
+findModulePath :: Path b Dir -> [Path Rel Dir] -> Path Rel File -> IO (Maybe FoundModulePath)
 findModulePath parentDir hsSourceDirs modPath =
   case hsSourceDirs of
     [] -> return Nothing
@@ -298,10 +317,26 @@ findModulePath parentDir hsSourceDirs modPath =
       modulePath <- Path.parseRelFile (Path.toFilePath modPath)
       let fullModulePath = parentDir Path.</> srcDir Path.</> modulePath
           extensions = [".hs", ".lhs", ".hsc", ".hs-boot"]
+
+      let modulePathWith ext = Path.addExtension ext (srcDir Path.</> modulePath)
+
       findExtension extensions fullModulePath >>= \case
         Nothing -> findModulePath parentDir otherDirs modPath
-        Just ext -> Just <$> Path.addExtension ext (srcDir Path.</> modulePath)
+        Just ext -> do
+          foundModulePath <- modulePathWith ext
+          foundBootPath <-
+            let addHsBoot :: Maybe String -> Maybe (Path Rel File)
+                addHsBoot = \case
+                  Nothing -> Nothing
+                  Just _ -> modulePathWith ".hs-boot"
+             in addHsBoot <$> findExtension [".hs-boot"] fullModulePath
+          pure $ Just $
+            FoundModulePath
+              { foundModulePath
+              , foundBootPath
+              }
   where
+    findExtension :: [String] -> Path absrel File -> IO (Maybe String)
     findExtension [] _ = return Nothing
     findExtension (ext:exts) p = do
       exists <- Path.addExtension ext p >>= Path.doesFileExist
