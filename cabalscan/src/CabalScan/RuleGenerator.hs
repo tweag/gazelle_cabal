@@ -284,10 +284,10 @@ depPackageNames = concatMap depNames . Cabal.targetBuildDepends
 
 data FoundModulePath = FoundModulePath
   { -- | The path to a module.
-    -- Producers for this must include extension of the file.
+    -- Producers for this must include the extension of the file.
     foundModulePath :: Path Rel File,
     -- | Every hs file might have a corresponding boot one.
-    -- Producers for this must include extension of the file.
+    -- Producers for this must include the extension of the file.
     foundBootPath :: Maybe (Path Rel File)
   }
   deriving (Eq, Show)
