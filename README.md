@@ -131,7 +131,7 @@ rule in the current repository with the same name, in which
 case such a target is added to the `deps` attribute instead.
 
 Similar logic applies in case of [internal libraries][internal_libraries]
-(a.k.a *sublibraries* or *named libraries*). Additionally, please 
+(a.k.a *sublibraries* or *named libraries*). Additionally, please
 beware of shadowing feature and the fact that internal libraries with
 cabal's [`visibility:private`][cabal_multiple_libraries] do not leak
 outside of the package where they have been defined. However, their
@@ -202,6 +202,19 @@ supported.
 * If Cabal components use different dependencies depending on Cabal
   flags, `gazelle_cabal` will only generate the rules for the
   configuration with default flag values.
+
+## Hacking on gazelle_cabal with nix
+
+If you are running NixOS or if you want to provision `ghc` and other dependencies using `nix`,
+you'll need to set the `host_platform` config option to `@io_tweag_rules_nixpkgs//nixpkgs/platforms:host`:
+```sh
+> bazel build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host ...
+```
+For ease of use, we recommend setting this in your `.bazelrc.local` file:
+```sh
+echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" >> .bazelrc.local
+echo "run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" >> .bazelrc.local
+```
 
 ## Sponsors
 
