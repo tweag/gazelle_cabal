@@ -203,9 +203,7 @@ supported.
   flags, `gazelle_cabal` will only generate the rules for the
   configuration with default flag values.
 
-## Developing
-
-### NixOS/Provisioning via Nix
+## Hacking on gazelle_cabal with nix
 
 If you are running NixOS or if you want to provision `ghc` and other dependencies using `nix`,
 you'll need to set the `host_platform` config option to `@io_tweag_rules_nixpkgs//nixpkgs/platforms:host`:
