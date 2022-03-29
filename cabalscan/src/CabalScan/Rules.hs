@@ -37,7 +37,7 @@ data RuleInfo = RuleInfo
   , cabalFile :: Text
   , importData :: ImportData
   , version :: Text
-  , srcs :: AttrValue
+  , srcs :: [Text]
   , hidden_modules :: Maybe AttrValue
   , dataAttr :: Maybe AttrValue
   , main_file :: Maybe AttrValue
