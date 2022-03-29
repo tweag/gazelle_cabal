@@ -36,7 +36,11 @@ data RuleInfo = RuleInfo
   , name :: Text
   , cabalFile :: Text
   , importData :: ImportData
-  , attrs :: Attributes
+  , version :: AttrValue
+  , srcs :: AttrValue
+  , hidden_modules :: Maybe AttrValue
+  , dataAttr :: Maybe AttrValue
+  , main_file :: Maybe AttrValue
   , privateAttrs :: Attributes
   }
 
@@ -60,17 +64,25 @@ data ComponentType = LIB | EXE | TEST | BENCH
 type Attributes = [(Text, AttrValue)]
 
 instance Aeson.ToJSON RuleInfo where
-  toJSON (RuleInfo kind name cabalFile importData attrs privAttrs) =
+  toJSON (RuleInfo kind name cabalFile importData version srcs hidden_modules dataAttr main_file privAttrs) =
     Aeson.object
       [ ("kind", Aeson.String kind)
       , ("name", Aeson.String name)
       , ("cabalFile", Aeson.String cabalFile)
       , ("importData", Aeson.toJSON importData)
-      , ("attrs", attrsToJson attrs)
+      , ("attrs", attrsJson)
       , ("privateAttrs", attrsToJson privAttrs)
       ]
    where
     attrsToJson as = Aeson.object [ (k, Aeson.toJSON v) | (k, v) <- as ]
+    attrsJson =
+      Aeson.object $
+        [ ("version", Aeson.toJSON version)
+        , ("srcs", Aeson.toJSON srcs )
+        ] ++
+        [("hidden_modules", Aeson.toJSON xs) | Just xs <- [hidden_modules]] ++
+        [("data", Aeson.toJSON xs) | Just xs <- [dataAttr]] ++
+        [("main_file", Aeson.toJSON mf) | Just mf <- [main_file]]
 
 instance Aeson.ToJSON ImportData where
   toJSON (ImportData deps ghcOpts extraLibraries tools) =

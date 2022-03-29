@@ -197,23 +197,21 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
           , extraLibraries = map Text.pack $ Cabal.extraLibs bi
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
-        , attrs =
-            [ ("version", TextValue pkgVersion)
-            , ("srcs", StringListValue $ map pathToText $ someModulePaths ++ otherModulePaths)
-            ] ++
-            [ ("hidden_modules", StringListValue xs)
-            | Just xs@(_:_) <- [hidden_modules]
-            ] ++
-            [ ("data", StringListValue $ map Text.pack dataFiles)
-            | not (null dataFiles)
+          , version = TextValue pkgVersion
+          , srcs = StringListValue $ map pathToText $ someModulePaths ++ otherModulePaths
+          , hidden_modules =
+             case hidden_modules of
+               Just xs@(_:_) -> Just $ StringListValue xs
+               _ -> Nothing
+          , dataAttr =
               -- The library always includes data files, and the other
               -- components must include them if they don't depend on the
               -- library.
-            , ctype == LIB || pkgName `notElem` deps
-            ] ++
-            [ ("main_file", TextValue $ Text.pack mf)
-            | Just mf <- [mainFile]
-            ]
+              if not (null dataFiles) && (ctype == LIB || pkgName `notElem` deps)
+              then Just $ StringListValue $ map Text.pack dataFiles
+              else Nothing
+          , main_file =
+              fmap (TextValue . Text.pack) mainFile
          , privateAttrs = privAttrs
         }
   where
