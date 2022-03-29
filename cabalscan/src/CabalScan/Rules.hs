@@ -36,7 +36,7 @@ data RuleInfo = RuleInfo
   , name :: Text
   , cabalFile :: Text
   , importData :: ImportData
-  , version :: AttrValue
+  , version :: Text
   , srcs :: AttrValue
   , hidden_modules :: Maybe AttrValue
   , dataAttr :: Maybe AttrValue
@@ -77,7 +77,7 @@ instance Aeson.ToJSON RuleInfo where
     attrsToJson as = Aeson.object [ (k, Aeson.toJSON v) | (k, v) <- as ]
     attrsJson =
       Aeson.object $
-        [ ("version", Aeson.toJSON version)
+        [ ("version", Aeson.String version)
         , ("srcs", Aeson.toJSON srcs )
         ] ++
         [("hidden_modules", Aeson.toJSON xs) | Just xs <- [hidden_modules]] ++

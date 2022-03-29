@@ -197,7 +197,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
           , extraLibraries = map Text.pack $ Cabal.extraLibs bi
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
-          , version = TextValue pkgVersion
+          , version = pkgVersion
           , srcs = StringListValue $ map pathToText $ someModulePaths ++ otherModulePaths
           , hidden_modules =
              case hidden_modules of
