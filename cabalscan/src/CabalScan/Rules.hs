@@ -17,19 +17,22 @@ import Data.Text (Text)
 -- >   , deps = ["protolude"]
 -- >   , extraLibraries = ["libsodium"]
 -- >   , tools = [ToolName "tasty-discover" "tasty-discover"]
--- >   , attrs = [ ("srcs", ["src/Main.hs"])
--- >             , ("ghcopts", "-DFOO=1")
--- >             ]
+-- >   , version = "0.1.0.0"]
+-- >   , hidden_modules = Just ("PackageA.Other.B" :| ["PackageA.Other.D"])
+-- >   , dataAttr = Nothing
+-- >   , srcs = ["src/Main.hs"]
 -- >   , privateAttrs = [ ("internal_library", "true") ]
 -- >   }
 --
--- stands for the rule instantiation
+-- stands for part of the rule instantiation
 --
 -- > haskell_library(
 -- >   name = 'foo',
 -- >   srcs = ['src/Main.hs'],
--- >   deps = ["@stackage//:protolude", "@libsodium//:libsodium"]
--- >   tools = ["@stackage-exe//tasty-discover"]
+-- >   hidden_modules = ["PackageA.Other.B", PackageA.Other.D"],
+-- >   deps = ["@stackage//:protolude", "@libsodium//:libsodium"],
+-- >   tools = ["@stackage-exe//tasty-discover"],
+-- >   version = "0.1.0.0",
 -- > )
 --
 data RuleInfo = RuleInfo
