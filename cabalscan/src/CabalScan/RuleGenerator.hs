@@ -257,10 +257,10 @@ findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames = do
   modulesAsPaths <- traverse Path.parseRelFile moduleNames
   concat <$> traverse findModules modulesAsPaths
   where
+    cabalDir = Path.parent cabalFilePath
     findModules :: Path Rel File -> IO [Path Rel File]
     findModules modulePath = do
-      let cabalDir = Path.parent cabalFilePath
-          raiseError = throwIO $ MissingModuleFile
+      let raiseError = throwIO $ MissingModuleFile
             { modulePath = Path.toFilePath modulePath
             , cabalFile = Path.toFilePath cabalFilePath
             , componentName = Text.unpack componentName
