@@ -6,6 +6,7 @@
 module CabalScan.Rules where
 
 import qualified Data.Aeson as Aeson
+import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 
 -- | Information about rules to give to bazel
@@ -38,7 +39,7 @@ data RuleInfo = RuleInfo
   , importData :: ImportData
   , version :: Text
   , srcs :: [Text]
-  , hidden_modules :: Maybe AttrValue
+  , hidden_modules :: Maybe (NonEmpty Text)
   , dataAttr :: Maybe AttrValue
   , main_file :: Maybe AttrValue
   , privateAttrs :: Attributes

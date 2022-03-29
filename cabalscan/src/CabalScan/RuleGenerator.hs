@@ -15,6 +15,7 @@ module CabalScan.RuleGenerator
 import Control.Exception (Exception, throwIO)
 import Control.Monad (filterM)
 import Data.List (intersperse)
+import Data.List.NonEmpty (nonEmpty)
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
@@ -199,10 +200,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
           }
           , version = pkgVersion
           , srcs = map pathToText $ someModulePaths ++ otherModulePaths
-          , hidden_modules =
-             case hidden_modules of
-               Just xs@(_:_) -> Just $ StringListValue xs
-               _ -> Nothing
+          , hidden_modules
           , dataAttr =
               -- The library always includes data files, and the other
               -- components must include them if they don't depend on the
@@ -218,7 +216,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
     pathToText = Text.pack . Path.toFilePath
 
     hidden_modules = case ctype of
-      LIB -> Just [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
+      LIB -> nonEmpty [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
       _ -> Nothing
 
     qualifiedModulePath = mconcat . intersperse "." . map Text.pack . Cabal.components
