@@ -34,6 +34,8 @@ library
       PackageA.Other.E
       PackageA.Other.LoopBoot
       PackageA.Other.LoopNonBoot
+      PackageA.Other.LiterateLoopBoot
+      PackageA.Other.LiterateLoopNonBoot
     build-depends:
       base,
       inspection-testing,

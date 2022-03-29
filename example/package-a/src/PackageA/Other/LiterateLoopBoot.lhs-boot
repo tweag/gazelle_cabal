@@ -1,0 +1,5 @@
+\begin{code}
+module PackageA.Other.LiterateLoopBoot where
+
+data LiterateLoopBoot = MkLiterateLoopBoot Int
+\end{code}
