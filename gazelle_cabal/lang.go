@@ -96,6 +96,7 @@ var haskellAttrInfo = rule.KindInfo{
 		"ghcopts":        true,
 		"data":           true,
 		"deps":           true,
+		"main_file":      true,
 		"plugins":        true,
 		"srcs":           true,
 		"tools":          true,
