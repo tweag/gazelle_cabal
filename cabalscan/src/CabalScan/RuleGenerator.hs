@@ -340,7 +340,7 @@ depPackageNames = concatMap depNames . Cabal.targetBuildDepends
         in
           map identifierOf $ Set.toList $ Cabal.depLibraries dep
 
--- | @findModulePaths parentDir hsSourceDirs modPath@ finds
+-- | @findModulePaths parentDir hsSourceDirs modulePath@ finds
 -- the paths of the module, relative to @hsSourceDirs@.
 --
 -- The input module path must be relative to some of the directories in
@@ -350,16 +350,15 @@ depPackageNames = concatMap depNames . Cabal.targetBuildDepends
 --
 -- The directories in @hsSourceDirs@ must be relative to @parentDir@.
 findModulePaths :: Path b Dir -> [Path Rel Dir] -> Path Rel File -> IO [Path Rel File]
-findModulePaths parentDir hsSourceDirs modPath =
+findModulePaths parentDir hsSourceDirs modulePath =
   case hsSourceDirs of
     [] -> return []
     srcDir:otherDirs -> do
-      modulePath <- Path.parseRelFile (Path.toFilePath modPath)
       let fullModulePath = parentDir Path.</> srcDir Path.</> modulePath
           extensions = [".hs", ".lhs", ".hsc", ".hs-boot", ".lhs-boot"]
 
       findExtensions extensions fullModulePath >>= \case
-        [] -> findModulePaths parentDir otherDirs modPath
+        [] -> findModulePaths parentDir otherDirs modulePath
         foundExtensions -> traverse (\ext -> Path.addExtension ext (srcDir Path.</> modulePath)) foundExtensions
   where
     findExtensions :: [String] -> Path absrel File -> IO [String]
