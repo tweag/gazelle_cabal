@@ -205,8 +205,8 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
               -- The library always includes data files, and the other
               -- components must include them if they don't depend on the
               -- library.
-              if not (null dataFiles) && (ctype == LIB || pkgName `notElem` deps)
-              then Just $ StringListValue $ map Text.pack dataFiles
+              if ctype == LIB || pkgName `notElem` deps
+              then nonEmpty $ map Text.pack dataFiles
               else Nothing
           , main_file =
               fmap (TextValue . Text.pack) mainFile

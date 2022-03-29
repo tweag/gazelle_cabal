@@ -40,7 +40,7 @@ data RuleInfo = RuleInfo
   , version :: Text
   , srcs :: [Text]
   , hidden_modules :: Maybe (NonEmpty Text)
-  , dataAttr :: Maybe AttrValue
+  , dataAttr :: Maybe (NonEmpty Text)
   , main_file :: Maybe AttrValue
   , privateAttrs :: Attributes
   }
