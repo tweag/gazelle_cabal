@@ -13,8 +13,9 @@ module CabalScan.RuleGenerator
   ) where
 
 import Control.Exception (Exception, throwIO)
+import Control.Monad (filterM)
 import Data.List (intersperse)
-import Data.Maybe (catMaybes, maybeToList)
+import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
 import qualified Data.Text as Text
@@ -99,10 +100,11 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
         else
           exeName
       buildInfo = Cabal.buildInfo executable
+      srcDirs = Cabal.hsSourceDirs buildInfo
       mainFilePath = Cabal.modulePath executable
       modules = [dropExtension mainFilePath]
       privAttrs = pkgNamePrivAttr pkgId
-  pubAttrs <- mainFileAttr cabalFilePath mainFilePath buildInfo
+  pubAttrs <- sequence [ mainFileAttr <$> findMainFile cabalFilePath mainFilePath srcDirs ]
   generateRule
     cabalFilePath
     pkgId
@@ -123,16 +125,17 @@ generateTestRule
 generateTestRule cabalFilePath pkgId dataFiles testsuite = do
   let testName = Text.pack $ Cabal.unUnqualComponentName $ Cabal.testName testsuite
       buildInfo = Cabal.testBuildInfo testsuite
-      mainFile = [ path | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite] ]
-      mainModule = map dropExtension mainFile
+      srcDirs = Cabal.hsSourceDirs buildInfo
+      mainFiles = [ path | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite] ]
+      mainModules = map dropExtension mainFiles
       privAttrs = pkgNamePrivAttr pkgId
-  pubAttrs <- fmap concat $ traverse (\mf -> mainFileAttr cabalFilePath mf buildInfo) mainFile
+  pubAttrs <- sequence [ mainFileAttr <$> findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
   generateRule
     cabalFilePath
     pkgId
     dataFiles
     buildInfo
-    mainModule
+    mainModules
     TEST
     testName
     pubAttrs
@@ -147,10 +150,11 @@ generateBenchmarkRule
 generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
   let benchName = Text.pack $ Cabal.unUnqualComponentName $ Cabal.benchmarkName benchmark
       buildInfo = Cabal.benchmarkBuildInfo benchmark
-      mainFile = [path | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]]
-      mainModule = map dropExtension mainFile
+      srcDirs = Cabal.hsSourceDirs buildInfo
+      mainFiles = [path | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]]
+      mainModule = map dropExtension mainFiles
       privAttrs = pkgNamePrivAttr pkgId
-  pubAttrs <- fmap concat $ traverse (\mf -> mainFileAttr cabalFilePath mf buildInfo) mainFile
+  pubAttrs <- sequence [ mainFileAttr <$> findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
   generateRule
     cabalFilePath
     pkgId
@@ -223,18 +227,38 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName pubAttr
     toToolName (Cabal.ExeDependency pkg exe _) =
       ToolName (pkgNameToText pkg) (Text.pack $ Cabal.unUnqualComponentName exe)
 
-mainFileAttr :: Path b File -> FilePath -> Cabal.BuildInfo -> IO Attributes
-mainFileAttr cabalFilePath mainFilePath bi = do
-  let
-    hsSourceDirs = Cabal.hsSourceDirs bi
-    cabalParentDir = Path.parent cabalFilePath
-    filePathToAttrValue = TextValue . Text.pack . Path.toFilePath
-    pathToMainFileAttr :: Path Rel File -> (Text, AttrValue)
-    pathToMainFileAttr = ((,) "main_file") . filePathToAttrValue
-  mainModulePath <- Path.parseRelFile $ dropExtension mainFilePath
-  srcDirs <- mapM Path.parseRelDir hsSourceDirs
-  pathMaybe <- findModulePath cabalParentDir srcDirs mainModulePath
-  return $ maybeToList $ fmap pathToMainFileAttr pathMaybe
+-- | Thrown when we can't find the file path of a main
+-- file which is referenced in a Cabal file (hs-source-dirs + main-is).
+data MainFileNotFound = MainFileNotFound
+  { cabalFile :: FilePath
+  , mainFile :: FilePath
+  , hsSourceDirs :: [FilePath]
+  }
+  deriving (Show, Exception)
+
+mainFileAttr :: FilePath -> (Text, AttrValue)
+mainFileAttr mainPath = ("main_file", TextValue $ Text.pack mainPath)
+
+-- | @findMainFile cabalFile mainFile hsSrcDirs@
+--
+-- Finds out relative path to the main file under the directory where
+-- the Cabal file is. It does simple concatenation between @hsSrcDir@ and
+-- the @mainFile@ and validates the existence of such path.
+--
+findMainFile :: Path b File -> FilePath -> [FilePath] -> IO FilePath
+findMainFile cabalFile mainFile hsSrcDirs = do
+  let parentDir = Path.parent cabalFile
+  mainPath <- Path.parseRelFile mainFile
+  srcDirs <- mapM Path.parseRelDir hsSrcDirs
+  let mainPaths = [ dir Path.</> mainPath | dir <- srcDirs ]
+  validPaths <- filterM (Path.doesFileExist . ((Path.</>) parentDir)) mainPaths
+  case validPaths of
+    path:_ -> return $ Path.toFilePath path
+    _   -> throwIO MainFileNotFound
+             { cabalFile = Path.toFilePath cabalFile
+             , mainFile = mainFile
+             , hsSourceDirs = hsSrcDirs
+             }
 
 pkgNamePrivAttr :: Cabal.PackageIdentifier -> Attributes
 pkgNamePrivAttr pkgId = [ ("pkgName", packageName) ]
