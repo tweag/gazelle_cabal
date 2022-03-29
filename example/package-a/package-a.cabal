@@ -103,7 +103,7 @@ benchmark bench-a
 
 benchmark bench-b
     type: exitcode-stdio-1.0
-    main-is: MainB.hs
+    main-is: prank/MainB.hs
     other-modules:
       PackageA.Other.C
     build-depends:

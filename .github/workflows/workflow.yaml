@@ -55,6 +55,11 @@ jobs:
           grep -q a-haskell-binary package-a/BUILD.bazel
           echo grep -q haskell_toolchain_library package-a/BUILD.bazel
           grep -q haskell_toolchain_library package-a/BUILD.bazel
+          # Test main_file attribute (taken from cabal's main_is)
+          # Simple scenario: main-is: Main.hs & hs-source-dirs: app
+          bash -cx 'grep -q "main_file = \"app/Main.hs\"" package-a/BUILD.bazel'
+          # Check concatenation when main-is: prank/Main.B and hs-source-dirs: app
+          bash -cx 'grep -q "main_file = \"app/prank/MainB.hs\"" package-a/BUILD.bazel'
           # Test sublibrary generation
           bash -cx "grep -q \"sublibPub\" package-b/BUILD.bazel"
           bash -cx "grep -q \"mtl\" package-b/BUILD.bazel"
