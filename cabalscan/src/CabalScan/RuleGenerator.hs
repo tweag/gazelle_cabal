@@ -243,6 +243,7 @@ data MultipleMainFilesFound = MultipleMainFilesFound
   { cabalFile :: FilePath
   , mainFile :: FilePath
   , hsSourceDirs :: [FilePath]
+  , foundFiles :: [FilePath]
   }
   deriving (Show, Exception)
 
@@ -266,10 +267,11 @@ findMainFile cabalFile mainFile hsSrcDirs = do
              , mainFile = mainFile
              , hsSourceDirs = hsSrcDirs
              }
-    _     -> throwIO MultipleMainFilesFound
+    paths     -> throwIO MultipleMainFilesFound
              { cabalFile = Path.toFilePath cabalFile
              , mainFile = mainFile
              , hsSourceDirs = hsSrcDirs
+             , foundFiles = map Path.toFilePath paths
              }
 
 pkgNamePrivAttr :: Cabal.PackageIdentifier -> Attributes
