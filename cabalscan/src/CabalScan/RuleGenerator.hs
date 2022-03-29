@@ -15,7 +15,7 @@ module CabalScan.RuleGenerator
 import Control.Exception (Exception, throwIO)
 import Control.Monad (filterM)
 import Data.List (intersperse)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, listToMaybe)
 import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
 import qualified Data.Text as Text
@@ -69,7 +69,6 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
       exposedModules = map Cabal.toFilePath $ Cabal.exposedModules lib
       buildInfo = Cabal.libBuildInfo lib
       privAttrs = libPrivAttrs pkgId lib
-      pubAttrs = []
   generateRule
     cabalFilePath
     pkgId
@@ -78,7 +77,7 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
     exposedModules
     LIB
     libraryName
-    pubAttrs
+    Nothing
     privAttrs
   where
     obtainLibraryName :: Cabal.LibraryName -> Text
@@ -104,7 +103,7 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
       mainFilePath = Cabal.modulePath executable
       modules = [dropExtension mainFilePath]
       privAttrs = pkgNamePrivAttr pkgId
-  pubAttrs <- sequence [ mainFileAttr <$> findMainFile cabalFilePath mainFilePath srcDirs ]
+  mainFile <- findMainFile cabalFilePath mainFilePath srcDirs
   generateRule
     cabalFilePath
     pkgId
@@ -113,7 +112,7 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
     modules
     EXE
     targetName
-    pubAttrs
+    (Just mainFile)
     privAttrs
 
 generateTestRule
@@ -129,7 +128,7 @@ generateTestRule cabalFilePath pkgId dataFiles testsuite = do
       mainFiles = [ path | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite] ]
       mainModules = map dropExtension mainFiles
       privAttrs = pkgNamePrivAttr pkgId
-  pubAttrs <- sequence [ mainFileAttr <$> findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
+  mainRelPaths <- sequence [ findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
   generateRule
     cabalFilePath
     pkgId
@@ -138,7 +137,7 @@ generateTestRule cabalFilePath pkgId dataFiles testsuite = do
     mainModules
     TEST
     testName
-    pubAttrs
+    (listToMaybe mainRelPaths)
     privAttrs
 
 generateBenchmarkRule
@@ -154,7 +153,7 @@ generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
       mainFiles = [path | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]]
       mainModule = map dropExtension mainFiles
       privAttrs = pkgNamePrivAttr pkgId
-  pubAttrs <- sequence [ mainFileAttr <$> findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
+  mainRelPaths <- sequence [ findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
   generateRule
     cabalFilePath
     pkgId
@@ -163,7 +162,7 @@ generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
     mainModule
     BENCH
     benchName
-    pubAttrs
+    (listToMaybe mainRelPaths)
     privAttrs
 
 generateRule
@@ -174,11 +173,11 @@ generateRule
   -> [FilePath]
   -> ComponentType
   -> Text
-  -> Attributes
+  -> Maybe FilePath
   -> Attributes
   -> IO (Maybe RuleInfo)
 generateRule _ _ _ bi _ _ _ _ _ | not (Cabal.buildable bi) = return Nothing
-generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName pubAttrs privAttrs = do
+generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFile privAttrs = do
   let pkgName = pkgNameToText $ Cabal.pkgName pkgId
       pkgVersion = Text.pack $ Cabal.prettyShow $ Cabal.pkgVersion pkgId
       versionMacro =
@@ -199,7 +198,6 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName pubAttr
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
         , attrs =
-            pubAttrs ++
             [ ("version", TextValue pkgVersion)
             , ("srcs", StringListValue $ map pathToText $ someModulePaths ++ otherModulePaths)
             ] ++
@@ -212,6 +210,9 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName pubAttr
               -- components must include them if they don't depend on the
               -- library.
             , ctype == LIB || pkgName `notElem` deps
+            ] ++
+            [ ("main_file", TextValue $ Text.pack mf)
+            | Just mf <- [mainFile]
             ]
          , privateAttrs = privAttrs
         }
@@ -236,8 +237,14 @@ data MainFileNotFound = MainFileNotFound
   }
   deriving (Show, Exception)
 
-mainFileAttr :: FilePath -> (Text, AttrValue)
-mainFileAttr mainPath = ("main_file", TextValue $ Text.pack mainPath)
+-- | Thrown when we find multiple main files
+-- under hs-source-dirs
+data MultipleMainFilesFound = MultipleMainFilesFound
+  { cabalFile :: FilePath
+  , mainFile :: FilePath
+  , hsSourceDirs :: [FilePath]
+  }
+  deriving (Show, Exception)
 
 -- | @findMainFile cabalFile mainFile hsSrcDirs@
 --
@@ -253,8 +260,13 @@ findMainFile cabalFile mainFile hsSrcDirs = do
   let mainPaths = [ dir Path.</> mainPath | dir <- srcDirs ]
   validPaths <- filterM (Path.doesFileExist . ((Path.</>) parentDir)) mainPaths
   case validPaths of
-    path:_ -> return $ Path.toFilePath path
-    _   -> throwIO MainFileNotFound
+    [path] -> return $ Path.toFilePath path
+    []   -> throwIO MainFileNotFound
+             { cabalFile = Path.toFilePath cabalFile
+             , mainFile = mainFile
+             , hsSourceDirs = hsSrcDirs
+             }
+    _     -> throwIO MultipleMainFilesFound
              { cabalFile = Path.toFilePath cabalFile
              , mainFile = mainFile
              , hsSourceDirs = hsSrcDirs
