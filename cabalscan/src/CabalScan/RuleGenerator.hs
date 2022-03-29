@@ -175,8 +175,8 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName privAtt
       otherModules = map Cabal.toFilePath (Cabal.otherModules bi)
       deps =  depPackageNames bi
   hsSourceDirs <- mapM Path.parseRelDir (Cabal.hsSourceDirs bi)
-  someModulePaths <- findModulePaths attrName cabalFilePath hsSourceDirs someModules
-  otherModulePaths <- findModulePaths attrName cabalFilePath hsSourceDirs otherModules
+  someModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs someModules
+  otherModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs otherModules
   return $ Just $ RuleInfo
         { kind = componentTypeToRuleName ctype
         , name = attrName
@@ -244,16 +244,16 @@ data MissingModuleFile = MissingModuleFile
   }
   deriving (Show, Exception)
 
--- | @findModulePaths componentName cabalFilePath hsSourceDirs someModules@
+-- | @findModulesPaths componentName cabalFilePath hsSourceDirs someModules@
 --
 -- Finds out which files define the given modules under the directory where
 -- the Cabal file is.
 --
 -- @componentName@ is used for error reporting only.
 --
-findModulePaths
+findModulesPaths
   :: Text -> Path b File -> [Path Rel Dir] -> [FilePath] -> IO [Path Rel File]
-findModulePaths componentName cabalFilePath hsSourceDirs moduleNames = do
+findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames = do
   modulesAsPaths <- mapM Path.parseRelFile moduleNames
   concat <$> mapM (fmap foundModulePathToPathList . findModule) modulesAsPaths
   where
