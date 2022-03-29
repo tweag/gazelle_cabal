@@ -299,7 +299,7 @@ findModulePaths parentDir hsSourceDirs modPath =
     srcDir:otherDirs -> do
       modulePath <- Path.parseRelFile (Path.toFilePath modPath)
       let fullModulePath = parentDir Path.</> srcDir Path.</> modulePath
-          extensions = [".hs", ".lhs", ".hsc", ".hs-boot"]
+          extensions = [".hs", ".lhs", ".hsc", ".hs-boot", ".lhs-boot"]
 
       findExtensions extensions fullModulePath >>= \case
         [] -> findModulePaths parentDir otherDirs modPath
