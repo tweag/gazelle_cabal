@@ -209,7 +209,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
               then nonEmpty $ map Text.pack dataFiles
               else Nothing
           , main_file =
-              fmap (TextValue . Text.pack) mainFile
+              Text.pack <$> mainFile
          , privateAttrs = privAttrs
         }
   where

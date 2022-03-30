@@ -44,7 +44,7 @@ data RuleInfo = RuleInfo
   , srcs :: [Text]
   , hidden_modules :: Maybe (NonEmpty Text)
   , dataAttr :: Maybe (NonEmpty Text)
-  , main_file :: Maybe AttrValue
+  , main_file :: Maybe Text
   , privateAttrs :: Attributes
   }
 
@@ -86,7 +86,7 @@ instance Aeson.ToJSON RuleInfo where
         ] ++
         [("hidden_modules", Aeson.toJSON xs) | Just xs <- [hidden_modules]] ++
         [("data", Aeson.toJSON xs) | Just xs <- [dataAttr]] ++
-        [("main_file", Aeson.toJSON mf) | Just mf <- [main_file]]
+        [("main_file", Aeson.String mf) | Just mf <- [main_file]]
 
 instance Aeson.ToJSON ImportData where
   toJSON (ImportData deps ghcOpts extraLibraries tools) =
