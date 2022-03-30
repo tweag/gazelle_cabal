@@ -14,13 +14,16 @@ import Data.Text (Text)
 -- > RuleInfo
 -- >   { kind = "haskell_library"
 -- >   , name = "foo"
--- >   , deps = ["protolude"]
--- >   , extraLibraries = ["libsodium"]
--- >   , tools = [ToolName "tasty-discover" "tasty-discover"]
+-- >   , importData = ImportData
+-- >     { deps = ["protolude"]
+-- >     , extraLibraries = ["libsodium"]
+-- >     , ghcOpts = ["-Werror", "-Wall"]
+-- >     , tools = [ToolName "tasty-discover" "tasty-discover"]
+-- >     }
 -- >   , version = "0.1.0.0"]
 -- >   , hidden_modules = Just ("PackageA.Other.B" :| ["PackageA.Other.D"])
 -- >   , dataAttr = Nothing
--- >   , srcs = ["src/Main.hs"]
+-- >   , main_file = Nothing
 -- >   , privateAttrs = [ ("internal_library", "true") ]
 -- >   }
 --
@@ -29,6 +32,7 @@ import Data.Text (Text)
 -- > haskell_library(
 -- >   name = 'foo',
 -- >   srcs = ['src/Main.hs'],
+-- >   ghcopts = ["-Werror", "-Wall"],
 -- >   hidden_modules = ["PackageA.Other.B", PackageA.Other.D"],
 -- >   deps = ["@stackage//:protolude", "@libsodium//:libsodium"],
 -- >   tools = ["@stackage-exe//tasty-discover"],
