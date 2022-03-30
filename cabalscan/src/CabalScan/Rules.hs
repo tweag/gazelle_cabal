@@ -20,7 +20,12 @@ import Data.Text (Text)
 -- >     , ghcOpts = ["-Werror", "-Wall"]
 -- >     , tools = [ToolName "tasty-discover" "tasty-discover"]
 -- >     }
--- >   , version = "0.1.0.0"]
+-- >   , version = "0.1.0.0"
+-- >   , srcs =
+-- >     [ 'src/PackageA/A.hs'
+-- >     , 'src/PackageA/Other/B.hs'
+-- >     , 'src/PackageA/Other/C.hs'
+-- >     ]
 -- >   , hiddenModules = Just ("PackageA.Other.B" :| ["PackageA.Other.D"])
 -- >   , dataAttr = Nothing
 -- >   , mainFile = Nothing
@@ -31,9 +36,13 @@ import Data.Text (Text)
 --
 -- > haskell_library(
 -- >   name = 'foo',
--- >   srcs = ['src/Main.hs'],
+-- >   srcs = [
+-- >     'src/PackageA/A.hs',
+-- >     'src/PackageA/Other/B.hs',
+-- >     'src/PackageA/Other/C.hs',
+-- >   ],
 -- >   ghcopts = ["-Werror", "-Wall"],
--- >   hiddenModules = ["PackageA.Other.B", PackageA.Other.D"],
+-- >   hiddenModules = ["PackageA.Other.B", PackageA.Other.C"],
 -- >   deps = ["@stackage//:protolude", "@libsodium//:libsodium"],
 -- >   tools = ["@stackage-exe//tasty-discover"],
 -- >   version = "0.1.0.0",
