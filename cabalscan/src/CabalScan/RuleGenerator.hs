@@ -15,6 +15,7 @@ module CabalScan.RuleGenerator
 import Control.Exception (Exception, throwIO)
 import Control.Monad (filterM)
 import Data.List (intersperse)
+import Data.List.NonEmpty (nonEmpty)
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
@@ -197,30 +198,25 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
           , extraLibraries = map Text.pack $ Cabal.extraLibs bi
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
-        , attrs =
-            [ ("version", TextValue pkgVersion)
-            , ("srcs", StringListValue $ map pathToText $ someModulePaths ++ otherModulePaths)
-            ] ++
-            [ ("hidden_modules", StringListValue xs)
-            | Just xs@(_:_) <- [hidden_modules]
-            ] ++
-            [ ("data", StringListValue $ map Text.pack dataFiles)
-            | not (null dataFiles)
+          , version = pkgVersion
+          , srcs = map pathToText $ someModulePaths ++ otherModulePaths
+          , hiddenModules
+          , dataAttr =
               -- The library always includes data files, and the other
               -- components must include them if they don't depend on the
               -- library.
-            , ctype == LIB || pkgName `notElem` deps
-            ] ++
-            [ ("main_file", TextValue $ Text.pack mf)
-            | Just mf <- [mainFile]
-            ]
+              if ctype == LIB || pkgName `notElem` deps
+              then nonEmpty $ map Text.pack dataFiles
+              else Nothing
+          , mainFile =
+              Text.pack <$> mainFile
          , privateAttrs = privAttrs
         }
   where
     pathToText = Text.pack . Path.toFilePath
 
-    hidden_modules = case ctype of
-      LIB -> Just [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
+    hiddenModules = case ctype of
+      LIB -> nonEmpty [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
       _ -> Nothing
 
     qualifiedModulePath = mconcat . intersperse "." . map Text.pack . Cabal.components

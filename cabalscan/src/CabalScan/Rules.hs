@@ -6,6 +6,7 @@
 module CabalScan.Rules where
 
 import qualified Data.Aeson as Aeson
+import Data.List.NonEmpty (NonEmpty)
 import Data.Text (Text)
 
 -- | Information about rules to give to bazel
@@ -13,22 +14,38 @@ import Data.Text (Text)
 -- > RuleInfo
 -- >   { kind = "haskell_library"
 -- >   , name = "foo"
--- >   , deps = ["protolude"]
--- >   , extraLibraries = ["libsodium"]
--- >   , tools = [ToolName "tasty-discover" "tasty-discover"]
--- >   , attrs = [ ("srcs", ["src/Main.hs"])
--- >             , ("ghcopts", "-DFOO=1")
--- >             ]
+-- >   , importData = ImportData
+-- >     { deps = ["protolude"]
+-- >     , extraLibraries = ["libsodium"]
+-- >     , ghcOpts = ["-Werror", "-Wall"]
+-- >     , tools = [ToolName "tasty-discover" "tasty-discover"]
+-- >     }
+-- >   , version = "0.1.0.0"
+-- >   , srcs =
+-- >     [ 'src/PackageA/A.hs'
+-- >     , 'src/PackageA/Other/B.hs'
+-- >     , 'src/PackageA/Other/C.hs'
+-- >     ]
+-- >   , hiddenModules = Just ("PackageA.Other.B" :| ["PackageA.Other.D"])
+-- >   , dataAttr = Nothing
+-- >   , mainFile = Nothing
 -- >   , privateAttrs = [ ("internal_library", "true") ]
 -- >   }
 --
--- stands for the rule instantiation
+-- stands for part of the rule instantiation
 --
 -- > haskell_library(
 -- >   name = 'foo',
--- >   srcs = ['src/Main.hs'],
--- >   deps = ["@stackage//:protolude", "@libsodium//:libsodium"]
--- >   tools = ["@stackage-exe//tasty-discover"]
+-- >   srcs = [
+-- >     'src/PackageA/A.hs',
+-- >     'src/PackageA/Other/B.hs',
+-- >     'src/PackageA/Other/C.hs',
+-- >   ],
+-- >   ghcopts = ["-Werror", "-Wall"],
+-- >   hiddenModules = ["PackageA.Other.B", PackageA.Other.C"],
+-- >   deps = ["@stackage//:protolude", "@libsodium//:libsodium"],
+-- >   tools = ["@stackage-exe//tasty-discover"],
+-- >   version = "0.1.0.0",
 -- > )
 --
 data RuleInfo = RuleInfo
@@ -36,7 +53,11 @@ data RuleInfo = RuleInfo
   , name :: Text
   , cabalFile :: Text
   , importData :: ImportData
-  , attrs :: Attributes
+  , version :: Text
+  , srcs :: [Text]
+  , hiddenModules :: Maybe (NonEmpty Text)
+  , dataAttr :: Maybe (NonEmpty Text)
+  , mainFile :: Maybe Text
   , privateAttrs :: Attributes
   }
 
@@ -60,17 +81,25 @@ data ComponentType = LIB | EXE | TEST | BENCH
 type Attributes = [(Text, AttrValue)]
 
 instance Aeson.ToJSON RuleInfo where
-  toJSON (RuleInfo kind name cabalFile importData attrs privAttrs) =
+  toJSON (RuleInfo kind name cabalFile importData version srcs hiddenModules dataAttr mainFile privAttrs) =
     Aeson.object
       [ ("kind", Aeson.String kind)
       , ("name", Aeson.String name)
       , ("cabalFile", Aeson.String cabalFile)
       , ("importData", Aeson.toJSON importData)
-      , ("attrs", attrsToJson attrs)
+      , ("attrs", attrsJson)
       , ("privateAttrs", attrsToJson privAttrs)
       ]
    where
     attrsToJson as = Aeson.object [ (k, Aeson.toJSON v) | (k, v) <- as ]
+    attrsJson =
+      Aeson.object $
+        [ ("version", Aeson.String version)
+        , ("srcs", Aeson.toJSON srcs )
+        ] ++
+        [("hidden_modules", Aeson.toJSON xs) | Just xs <- [hiddenModules]] ++
+        [("data", Aeson.toJSON xs) | Just xs <- [dataAttr]] ++
+        [("main_file", Aeson.String mf) | Just mf <- [mainFile]]
 
 instance Aeson.ToJSON ImportData where
   toJSON (ImportData deps ghcOpts extraLibraries tools) =
