@@ -200,7 +200,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
           }
           , version = pkgVersion
           , srcs = map pathToText $ someModulePaths ++ otherModulePaths
-          , hidden_modules
+          , hiddenModules
           , dataAttr =
               -- The library always includes data files, and the other
               -- components must include them if they don't depend on the
@@ -208,14 +208,14 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
               if ctype == LIB || pkgName `notElem` deps
               then nonEmpty $ map Text.pack dataFiles
               else Nothing
-          , main_file =
+          , mainFile =
               Text.pack <$> mainFile
          , privateAttrs = privAttrs
         }
   where
     pathToText = Text.pack . Path.toFilePath
 
-    hidden_modules = case ctype of
+    hiddenModules = case ctype of
       LIB -> nonEmpty [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
       _ -> Nothing
 

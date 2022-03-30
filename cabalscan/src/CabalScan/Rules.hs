@@ -21,9 +21,9 @@ import Data.Text (Text)
 -- >     , tools = [ToolName "tasty-discover" "tasty-discover"]
 -- >     }
 -- >   , version = "0.1.0.0"]
--- >   , hidden_modules = Just ("PackageA.Other.B" :| ["PackageA.Other.D"])
+-- >   , hiddenModules = Just ("PackageA.Other.B" :| ["PackageA.Other.D"])
 -- >   , dataAttr = Nothing
--- >   , main_file = Nothing
+-- >   , mainFile = Nothing
 -- >   , privateAttrs = [ ("internal_library", "true") ]
 -- >   }
 --
@@ -33,7 +33,7 @@ import Data.Text (Text)
 -- >   name = 'foo',
 -- >   srcs = ['src/Main.hs'],
 -- >   ghcopts = ["-Werror", "-Wall"],
--- >   hidden_modules = ["PackageA.Other.B", PackageA.Other.D"],
+-- >   hiddenModules = ["PackageA.Other.B", PackageA.Other.D"],
 -- >   deps = ["@stackage//:protolude", "@libsodium//:libsodium"],
 -- >   tools = ["@stackage-exe//tasty-discover"],
 -- >   version = "0.1.0.0",
@@ -46,9 +46,9 @@ data RuleInfo = RuleInfo
   , importData :: ImportData
   , version :: Text
   , srcs :: [Text]
-  , hidden_modules :: Maybe (NonEmpty Text)
+  , hiddenModules :: Maybe (NonEmpty Text)
   , dataAttr :: Maybe (NonEmpty Text)
-  , main_file :: Maybe Text
+  , mainFile :: Maybe Text
   , privateAttrs :: Attributes
   }
 
@@ -72,7 +72,7 @@ data ComponentType = LIB | EXE | TEST | BENCH
 type Attributes = [(Text, AttrValue)]
 
 instance Aeson.ToJSON RuleInfo where
-  toJSON (RuleInfo kind name cabalFile importData version srcs hidden_modules dataAttr main_file privAttrs) =
+  toJSON (RuleInfo kind name cabalFile importData version srcs hiddenModules dataAttr mainFile privAttrs) =
     Aeson.object
       [ ("kind", Aeson.String kind)
       , ("name", Aeson.String name)
@@ -88,9 +88,9 @@ instance Aeson.ToJSON RuleInfo where
         [ ("version", Aeson.String version)
         , ("srcs", Aeson.toJSON srcs )
         ] ++
-        [("hidden_modules", Aeson.toJSON xs) | Just xs <- [hidden_modules]] ++
+        [("hidden_modules", Aeson.toJSON xs) | Just xs <- [hiddenModules]] ++
         [("data", Aeson.toJSON xs) | Just xs <- [dataAttr]] ++
-        [("main_file", Aeson.String mf) | Just mf <- [main_file]]
+        [("main_file", Aeson.String mf) | Just mf <- [mainFile]]
 
 instance Aeson.ToJSON ImportData where
   toJSON (ImportData deps ghcOpts extraLibraries tools) =
