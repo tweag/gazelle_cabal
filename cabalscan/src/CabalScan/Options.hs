@@ -1,38 +1,36 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
-module CabalScan.Options
-  ( Options(..)
-  , parseCommandLine
-  ) where
+module CabalScan.Options (parseCommandLine) where
 
-import Path (Abs, File, Path, parseAbsFile)
 import System.Environment
-import System.Console.GetOpt
-import System.Exit (exitFailure, exitSuccess)
 import Data.List (intercalate)
-import System.IO (hPutStrLn, stderr, stdout, Handle)
+import qualified Path as Path
+import qualified System.IO as SIO
+import qualified System.Exit as Exit
+import qualified System.Console.GetOpt as Opt
 
 data InputOptions = Help
 
-options :: [ OptDescr InputOptions ]
-options = [ Option ['h'] ["help"] (NoArg Help) "Prints this message" ]
+type CabalFiles = [Path.Path Path.Abs Path.File]
 
-data Options = Options
-  { cabalFiles :: [Path Abs File]
-  }
+options :: [ Opt.OptDescr InputOptions ]
+options = [ Opt.Option ['h'] ["help"] (Opt.NoArg Help) "Prints this message" ]
 
-parseArgs :: [String] -> IO [Path Abs File]
-parseArgs argv = case getOpt Permute options argv of
-                     (_:_,_,_)   -> hPutLn stdout [usage] *> exitSuccess
-                     (_,[],_)    -> hPutLn stderr [missingFiles, usage] *> exitFailure
-                     (_,files,_) -> sequence [ maybe (logErrAndExit f) return (parseAbsFile f) | f <- files ]
-  where usage = [usageInfo header options]
-        header = "Usage: cabalscan [OPTION...] CABAL_FILES..."
-        missingFiles = ["Missing: CABAL_FILES..."]
-        wrongpath f = ["Couldn't parse absolute file path: " ++ f]
-        logErrAndExit f = hPutLn stderr [wrongpath f, usage] *> exitFailure
-        hPutLn :: Handle -> [[String]] -> IO ()
-        hPutLn h = hPutStrLn h . intercalate "\n" . map unlines
+parseArgs :: [String] -> IO CabalFiles
+parseArgs argv = case Opt.getOpt Opt.Permute options argv of
+                     (_:_,_,_)   -> hPutLn SIO.stdout [usage] *> Exit.exitSuccess
+                     (_,[],_)    -> hPutLn SIO.stderr [missingFiles, usage] *> Exit.exitFailure
+                     (_,files,_) -> sequence [ maybe (logErrAndExit f) return (Path.parseAbsFile f) | f <- files ]
+  where usage :: String
+        usage = Opt.usageInfo header options
+        header :: String
+        header = unlines ["Usage: cabalscan [OPTION...] CABAL_FILES...",
+                          "  Prints in stdout information extracted from Cabal files in JSON format."]
+        missingFiles :: String
+        missingFiles = "Missing: CABAL_FILES..."
+        wrongpath :: FilePath -> String
+        wrongpath f = "Couldn't parse absolute file path: '" ++ f ++ "'"
+        logErrAndExit f = hPutLn SIO.stderr [wrongpath f, usage] *> Exit.exitFailure
+        hPutLn :: SIO.Handle -> [String] -> IO ()
+        hPutLn h = SIO.hPutStrLn h . intercalate "\n\n"
 
-parseCommandLine :: IO Options
-parseCommandLine = getArgs >>= parseArgs >>= return . Options
+parseCommandLine :: IO CabalFiles
+parseCommandLine = getArgs >>= parseArgs
