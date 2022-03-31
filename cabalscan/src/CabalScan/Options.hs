@@ -19,14 +19,10 @@ parseArgs argv = case Opt.getOpt Opt.Permute options argv of
                      (_:_,_,_)   -> hPutLn SIO.stdout [usage] *> Exit.exitSuccess
                      (_,[],_)    -> hPutLn SIO.stderr [missingFiles, usage] *> Exit.exitFailure
                      (_,files,_) -> sequence [ maybe (logErrAndExit f) return (Path.parseAbsFile f) | f <- files ]
-  where usage :: String
-        usage = Opt.usageInfo header options
-        header :: String
+  where usage = Opt.usageInfo header options
         header = unlines ["Usage: cabalscan [OPTION...] CABAL_FILES...",
                           "  Prints in stdout information extracted from Cabal files in JSON format."]
-        missingFiles :: String
         missingFiles = "Missing: CABAL_FILES..."
-        wrongpath :: FilePath -> String
         wrongpath f = "Couldn't parse absolute file path: '" ++ f ++ "'"
         logErrAndExit f = hPutLn SIO.stderr [wrongpath f, usage] *> Exit.exitFailure
         hPutLn :: SIO.Handle -> [String] -> IO ()
