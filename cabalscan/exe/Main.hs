@@ -10,8 +10,8 @@ import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy
 
 main :: IO ()
 main = do
-  opts <- Options.parseCommandLine
-  mapM generateRulesForCabalFile (Options.cabalFiles opts)
+  cabalFiles <- Options.parseCommandLine
+  mapM generateRulesForCabalFile cabalFiles
     >>= printRuleInfos . concat
 
 printRuleInfos :: [RuleInfo] -> IO ()
