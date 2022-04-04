@@ -52,22 +52,11 @@ gazelle_cabal_dependencies(
 
 stack_snapshot(
     name = "stackage-b",
-    components = {
-        "tasty-discover": [
-            "lib",
-            "exe:tasty-discover",
-        ],
-    },
     packages = [
         "aeson",  # keep
-        "base",
         "inspection-testing",
         "path",  # keep
         "path-io",  #keep
-        "tasty",
-        "tasty-discover",
-        "tasty-hunit",
-        "void",
     ],
     snapshot = "lts-18.1",
 )
