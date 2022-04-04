@@ -70,8 +70,7 @@ func setCompilerFlagsAttribute(
 	ghcOpts := make([]string, 0, ghcOptsSize)
 
 	dropToolMacroDefs(importData.GhcOpts, importData.Tools, &ghcOpts)
-	addLibraryFlags(unresolvedExtraLibraries, &compilerFlags)
-	// addLibraryFlags(extraLibrariesMap, importData.ExtraLibraries, &ghcOpts)
+	addLibraryFlags(unresolvedExtraLibraries, &ghcOpts)
 	addMacroDefs(ix, toolRepo, importData.Tools, from, &ghcOpts)
 	SetAttrIfNotEmpty(r, "ghcopts", ghcOpts)
 }

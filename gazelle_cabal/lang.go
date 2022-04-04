@@ -4,6 +4,7 @@ package gazelle_cabal
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"path"
 	"path/filepath"
@@ -41,6 +42,9 @@ func (*gazelleCabalLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error { 
 func (*gazelleCabalLang) KnownDirectives() []string {
 	return []string{
 		"cabal_haskell_package_repo",
+		// Added to avoid warnings when running :gazelle-update-repos
+		// https://github.com/tweag/gazelle_cabal/issues/8
+		"resolve",
 	}
 }
 
