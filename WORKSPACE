@@ -79,7 +79,6 @@ haskell_register_ghc_nixpkgs(
 # Go preamble
 ###############
 
-
 http_archive(
     name = "io_bazel_rules_go",
     sha256 = "f2dcd210c7095febe54b804bb1cd3a58fe8435a909db2ec04e31542631cf715c",
