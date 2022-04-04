@@ -113,7 +113,15 @@ http_archive(
     ],
 )
 
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
+
+# go_repository added due to: https://github.com/bazelbuild/bazel-gazelle/issues/1217
+go_repository(
+    name = "org_golang_x_xerrors",
+    importpath = "golang.org/x/xerrors",
+    sum = "h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=",
+    version = "v0.0.0-20200804184101-5ec99f83aff1",
+)
 
 gazelle_dependencies()
 
