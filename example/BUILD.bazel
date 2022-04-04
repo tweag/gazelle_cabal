@@ -6,7 +6,7 @@ load(
 )
 load("@rules_haskell//haskell:defs.bzl", "ghc_plugin")
 
-# gazelle:cabal_extra_libraries z=@zlib.dev//:zlib
+# gazelle:resolve gazelle_cabal z @zlib.dev//:zlib
 gazelle(
     name = "gazelle",
     gazelle = ":gazelle_binary",

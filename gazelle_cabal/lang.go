@@ -19,7 +19,6 @@ import (
 
 	"os"
 	"os/exec"
-	"strings"
 )
 
 ////////////////////////////////////////////////////
@@ -42,13 +41,14 @@ func (*gazelleCabalLang) CheckFlags(fs *flag.FlagSet, c *config.Config) error { 
 
 func (*gazelleCabalLang) KnownDirectives() []string {
 	return []string{
-		"cabal_extra_libraries",
 		"cabal_haskell_package_repo",
+		// Added to avoid warnings when running :gazelle-update-repos
+		// https://github.com/tweag/gazelle_cabal/issues/8
+		"resolve",
 	}
 }
 
 type Config struct {
-	ExtraLibrariesMap  map[string]string
 	HaskellPackageRepo string
 }
 
@@ -63,30 +63,17 @@ func (*gazelleCabalLang) Configure(c *config.Config, rel string, f *rule.File) {
 		extraConfig = m.(Config)
 	} else {
 		extraConfig = Config{
-			ExtraLibrariesMap:  make(map[string]string),
 			HaskellPackageRepo: "stackage",
 		}
 	}
 
 	for _, directive := range f.Directives {
 		switch directive.Key {
-		case "cabal_extra_libraries":
-			parseExtraLibraries(&extraConfig, directive.Value)
 		case "cabal_haskell_package_repo":
 			extraConfig.HaskellPackageRepo = directive.Value
 		}
 	}
 	c.Exts[gazelleCabalName] = extraConfig
-}
-
-func parseExtraLibraries(config *Config, value string) {
-	kv := strings.Split(value, "=")
-	if len(kv) != 2 {
-		msg := "Can't parse value of cabal_extra_libraries: %s"
-		err := fmt.Errorf(msg, value)
-		log.Fatal(err)
-	}
-	(*config).ExtraLibrariesMap[kv[0]] = kv[1]
 }
 
 var haskellAttrInfo = rule.KindInfo{
@@ -158,12 +145,13 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 func (*gazelleCabalLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
 
 func (*gazelleCabalLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
-	extraLibrariesMap := c.Exts[gazelleCabalName].(Config).ExtraLibrariesMap
 	packageRepo := c.Exts[gazelleCabalName].(Config).HaskellPackageRepo
 	toolRepo := packageRepo + "-exe"
 	importData := imports.(ImportData)
-	setDepsAndPluginsAttributes(extraLibrariesMap, packageRepo, ix, r, importData, from)
-	setCompilerFlagsAttribute(extraLibrariesMap, toolRepo, ix, r, importData, from)
+
+	libraryLabels, unresolvedExtraLibraries := getExtraLibraryLabels(c, importData.ExtraLibraries)
+	setDepsAndPluginsAttributes(libraryLabels, packageRepo, ix, r, importData, from)
+	setCompilerFlagsAttribute(unresolvedExtraLibraries, toolRepo, ix, r, importData, from)
 	setToolsAttribute(ix, toolRepo, r, importData, from)
 }
 

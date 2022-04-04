@@ -83,28 +83,17 @@ func TestToolMacroName(t *testing.T) {
 
 func TestAddLibraryFlags(t *testing.T) {
 
-	libraryMap := map[string]string{"z": "@zlib.dev//:zlib"}
-	libraries := []string{"m", "z", "SDL"}
+	libraries := []string{"m", "SDL"}
 	got := make([]string, 0, len(libraries))
-	addLibraryFlags(libraryMap, libraries, &got)
+	addLibraryFlags(libraries, &got)
 	wanted := []string{"-lm", "-lSDL"}
 	if !reflect.DeepEqual(got, wanted) {
 		t.Errorf("got %v, wanted %v", got, wanted)
 	}
 
-	libraryMap = map[string]string{"z": "@zlib.dev//:zlib"}
-	libraries = []string{"m", "SDL"}
-	got = make([]string, 0, len(libraries))
-	addLibraryFlags(libraryMap, libraries, &got)
-	wanted = []string{"-lm", "-lSDL"}
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %v, wanted %v", got, wanted)
-	}
-
-	libraryMap = map[string]string{}
 	libraries = []string{}
 	got = make([]string, 0, len(libraries))
-	addLibraryFlags(libraryMap, libraries, &got)
+	addLibraryFlags(libraries, &got)
 	wanted = []string{}
 	if !reflect.DeepEqual(got, wanted) {
 		t.Errorf("got %v, wanted %v", got, wanted)
