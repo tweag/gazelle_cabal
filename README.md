@@ -198,10 +198,9 @@ require patches to deal with some unsupported features. The Cabal files in
 the [example repo][example] rehearse the range of features currently
 supported.
 
-* `.hs-boot` and `.lhs-boot` files are unsupported.
-* If Cabal components use different dependencies depending on Cabal
-  flags, `gazelle_cabal` will only generate the rules for the
-  configuration with default flag values.
+If Cabal components use different dependencies depending on Cabal
+flags, `gazelle_cabal` will only generate the rules for the
+configuration with default flag values.
 
 ## Hacking on gazelle_cabal with nix
 
