@@ -53,8 +53,8 @@ gazelle_cabal_dependencies(
 stack_snapshot(
     name = "stackage-b",
     packages = [
-        "json",  # keep
         "inspection-testing",
+        "json",  # keep
         "path",  # keep
         "path-io",  #keep
     ],
