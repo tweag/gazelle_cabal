@@ -2,12 +2,12 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module CabalScan.Rules where
 
-import qualified Data.Aeson as Aeson
-import Data.List.NonEmpty (NonEmpty)
-import Data.Text (Text)
+import qualified Text.JSON as Json
+import Data.List.NonEmpty (NonEmpty((:|)))
 
 -- | Information about rules to give to bazel
 --
@@ -49,75 +49,85 @@ import Data.Text (Text)
 -- > )
 --
 data RuleInfo = RuleInfo
-  { kind :: Text
-  , name :: Text
-  , cabalFile :: Text
+  { kind :: String
+  , name :: String
+  , cabalFile :: String
   , importData :: ImportData
-  , version :: Text
-  , srcs :: [Text]
-  , hiddenModules :: Maybe (NonEmpty Text)
-  , dataAttr :: Maybe (NonEmpty Text)
-  , mainFile :: Maybe Text
+  , version :: String
+  , srcs :: [String]
+  , hiddenModules :: Maybe (NonEmpty String)
+  , dataAttr :: Maybe (NonEmpty String)
+  , mainFile :: Maybe String
   , privateAttrs :: Attributes
   }
 
 -- | Attributes relevant for dependency resolution
 data ImportData = ImportData
-  { deps :: [Text]
-  , ghcOpts :: [Text]
-  , extraLibraries :: [Text]
+  { deps :: [String]
+  , ghcOpts :: [String]
+  , extraLibraries :: [String]
   , tools :: [ToolName]
   }
 
 data AttrValue
-  = StringListValue [Text]
-  | TextValue Text
+  = StringListValue [String]
+  | StringValue String
 
-data ToolName = ToolName { package :: Text, executable :: Text }
+data ToolName = ToolName { package :: String, executable :: String }
 
 data ComponentType = LIB | EXE | TEST | BENCH
   deriving (Eq, Ord, Show)
 
-type Attributes = [(Text, AttrValue)]
+type Attributes = [(String, AttrValue)]
 
-instance Aeson.ToJSON RuleInfo where
-  toJSON (RuleInfo kind name cabalFile importData version srcs hiddenModules dataAttr mainFile privAttrs) =
-    Aeson.object
-      [ ("kind", Aeson.String kind)
-      , ("name", Aeson.String name)
-      , ("cabalFile", Aeson.String cabalFile)
-      , ("importData", Aeson.toJSON importData)
+instance Json.JSON RuleInfo where
+  showJSON (RuleInfo kind name cabalFile importData version srcs hiddenModules dataAttr mainFile privAttrs) =
+    Json.JSObject $ Json.toJSObject
+      [ ("kind", Json.showJSON kind)
+      , ("name", Json.showJSON name)
+      , ("cabalFile", Json.showJSON cabalFile)
+      , ("importData", Json.showJSON importData)
       , ("attrs", attrsJson)
       , ("privateAttrs", attrsToJson privAttrs)
       ]
    where
-    attrsToJson as = Aeson.object [ (k, Aeson.toJSON v) | (k, v) <- as ]
+    attrsToJson as = Json.JSObject $ Json.toJSObject [ (k, Json.showJSON v) | (k, v) <- as ]
     attrsJson =
-      Aeson.object $
-        [ ("version", Aeson.String version)
-        , ("srcs", Aeson.toJSON srcs )
+      Json.JSObject $ Json.toJSObject $
+        [ ("version", Json.showJSON version)
+        , ("srcs", Json.showJSON srcs )
         ] ++
-        [("hidden_modules", Aeson.toJSON xs) | Just xs <- [hiddenModules]] ++
-        [("data", Aeson.toJSON xs) | Just xs <- [dataAttr]] ++
-        [("main_file", Aeson.String mf) | Just mf <- [mainFile]]
+        [("hidden_modules", Json.showJSON xs) | Just xs <- [hiddenModules]] ++
+        [("data", Json.showJSON xs) | Just xs <- [dataAttr]] ++
+        [("main_file", Json.showJSON mf) | Just mf <- [mainFile]]
+  readJSON _ = error "We are only exporting the result to JSON, hence the read function is undefined."
 
-instance Aeson.ToJSON ImportData where
-  toJSON (ImportData deps ghcOpts extraLibraries tools) =
-    Aeson.object
-      [ ("deps", Aeson.toJSON deps)
-      , ("ghcopts", Aeson.toJSON ghcOpts)
-      , ("tools", Aeson.toJSON tools)
-      , ("extraLibraries", Aeson.toJSON (StringListValue extraLibraries))
+instance Json.JSON ImportData where
+  showJSON (ImportData deps ghcOpts extraLibraries tools) =
+    Json.JSObject $ Json.toJSObject
+      [ ("deps", Json.showJSON deps)
+      , ("ghcopts", Json.showJSON ghcOpts)
+      , ("tools", Json.showJSON tools)
+      , ("extraLibraries", Json.showJSON (StringListValue extraLibraries))
       ]
+  readJSON _ = error "We are only exporting the result to JSON, hence the read function is undefined."
 
-instance Aeson.ToJSON AttrValue where
-  toJSON = \case
-    TextValue t -> Aeson.String t
-    StringListValue ts -> Aeson.toJSON ts
+instance Json.JSON AttrValue where
+  showJSON = \case
+    StringValue t -> Json.showJSON t
+    StringListValue ts -> Json.showJSON ts
+  readJSON _ = error "We are only exporting the result to JSON, hence the read function is undefined."
 
-instance Aeson.ToJSON ToolName where
-  toJSON (ToolName pkg exe) =
-    Aeson.object
-      [ ("packageName", Aeson.toJSON pkg)
-      , ("executableName", Aeson.toJSON exe)
+instance Json.JSON ToolName where
+  showJSON (ToolName pkg exe) =
+    Json.JSObject $ Json.toJSObject
+      [ ("packageName", Json.showJSON pkg)
+      , ("executableName", Json.showJSON exe)
       ]
+  readJSON _ = error "We are only exporting the result to JSON, hence the read function is undefined."
+
+instance Json.JSON a => Json.JSON (NonEmpty a) where
+  showJSON (hd :| tl) = Json.showJSONs (hd : tl)
+  readJSON (Json.JSArray []) = error "Cannot construct a NonEmpty from []"
+  readJSON (Json.JSArray (hd : tl)) = (:|) <$> Json.readJSON hd <*> mapM Json.readJSON tl
+  readJSON _ = error "Unable to read list"
