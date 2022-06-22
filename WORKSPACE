@@ -49,8 +49,8 @@ stack_snapshot(
         ],
     },
     packages = [
-        "json",
         "hspec",
+        "json",
         "path",
         "path-io",
         "tasty",
