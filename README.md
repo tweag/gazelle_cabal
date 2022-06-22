@@ -39,12 +39,12 @@ gazelle_cabal_dependencies()
 stack_snapshot(
     name = "stackage",
     packages = [
-        "aeson", # keep
+        "json", # keep
         "path", # keep
         "path-io", # keep
     ],
     # Most snapshots of your choice might do
-    snapshot = "lts-18.1",
+    snapshot = "lts-18.28",
 )
 ```
 Should Haskell packages need to be grabbed from elsewhere, alternative

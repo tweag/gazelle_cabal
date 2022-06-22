@@ -17,9 +17,7 @@ import Control.Monad (filterM)
 import Data.List (intersperse)
 import Data.List.NonEmpty (nonEmpty)
 import Data.Maybe (catMaybes, listToMaybe)
-import Data.Text (Text)
 import Data.Set.Internal as Set (toList)
-import qualified Data.Text as Text
 import qualified Distribution.Compiler as Cabal
 import qualified Distribution.ModuleName as Cabal
 import qualified Distribution.Package as Cabal
@@ -81,9 +79,9 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
     Nothing
     privAttrs
   where
-    obtainLibraryName :: Cabal.LibraryName -> Text
-    obtainLibraryName (Cabal.LSubLibName name) = Text.pack . Cabal.unUnqualComponentName $ name
-    obtainLibraryName _ = pkgNameToText $ Cabal.pkgName pkgId
+    obtainLibraryName :: Cabal.LibraryName -> String
+    obtainLibraryName (Cabal.LSubLibName name) = Cabal.unUnqualComponentName $ name
+    obtainLibraryName _ = pkgNameToString $ Cabal.pkgName pkgId
 
 generateBinaryRule
   :: Path b File
@@ -92,8 +90,8 @@ generateBinaryRule
   -> Cabal.Executable
   -> IO (Maybe RuleInfo)
 generateBinaryRule cabalFilePath pkgId dataFiles executable = do
-  let pkgName = pkgNameToText $ Cabal.pkgName pkgId
-      exeName = Text.pack $ Cabal.unUnqualComponentName $ Cabal.exeName executable
+  let pkgName = pkgNameToString $ Cabal.pkgName pkgId
+      exeName = Cabal.unUnqualComponentName $ Cabal.exeName executable
       targetName =
         if exeName == pkgName then
           exeName <> "-binary"
@@ -123,7 +121,7 @@ generateTestRule
   -> Cabal.TestSuite
   -> IO (Maybe RuleInfo)
 generateTestRule cabalFilePath pkgId dataFiles testsuite = do
-  let testName = Text.pack $ Cabal.unUnqualComponentName $ Cabal.testName testsuite
+  let testName = Cabal.unUnqualComponentName $ Cabal.testName testsuite
       buildInfo = Cabal.testBuildInfo testsuite
       srcDirs = Cabal.hsSourceDirs buildInfo
       mainFiles = [ path | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite] ]
@@ -148,7 +146,7 @@ generateBenchmarkRule
   -> Cabal.Benchmark
   -> IO (Maybe RuleInfo)
 generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
-  let benchName = Text.pack $ Cabal.unUnqualComponentName $ Cabal.benchmarkName benchmark
+  let benchName = Cabal.unUnqualComponentName $ Cabal.benchmarkName benchmark
       buildInfo = Cabal.benchmarkBuildInfo benchmark
       srcDirs = Cabal.hsSourceDirs buildInfo
       mainFiles = [path | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]]
@@ -173,16 +171,16 @@ generateRule
   -> Cabal.BuildInfo
   -> [FilePath]
   -> ComponentType
-  -> Text
+  -> String
   -> Maybe FilePath
   -> Attributes
   -> IO (Maybe RuleInfo)
 generateRule _ _ _ bi _ _ _ _ _ | not (Cabal.buildable bi) = return Nothing
 generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFile privAttrs = do
-  let pkgName = pkgNameToText $ Cabal.pkgName pkgId
-      pkgVersion = Text.pack $ Cabal.prettyShow $ Cabal.pkgVersion pkgId
+  let pkgName = pkgNameToString $ Cabal.pkgName pkgId
+      pkgVersion = Cabal.prettyShow $ Cabal.pkgVersion pkgId
       versionMacro =
-        "-DVERSION_" <> Text.replace "-" "_" pkgName <> "=" <> Text.pack (show pkgVersion)
+        "-DVERSION_" <> map underscorify pkgName <> "=" <> show pkgVersion
       otherModules = map Cabal.toFilePath (Cabal.otherModules bi)
       deps =  depPackageNames bi
   hsSourceDirs <- mapM Path.parseRelDir (Cabal.hsSourceDirs bi)
@@ -191,38 +189,40 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
   return $ Just $ RuleInfo
         { kind = componentTypeToRuleName ctype
         , name = attrName
-        , cabalFile = pathToText cabalFilePath
+        , cabalFile = pathToString cabalFilePath
         , importData = ImportData
           { deps
           , ghcOpts = versionMacro : optionsFromBuildInfo bi
-          , extraLibraries = map Text.pack $ Cabal.extraLibs bi
+          , extraLibraries = Cabal.extraLibs bi
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
           , version = pkgVersion
-          , srcs = map pathToText $ someModulePaths ++ otherModulePaths
+          , srcs = map pathToString $ someModulePaths ++ otherModulePaths
           , hiddenModules
           , dataAttr =
               -- The library always includes data files, and the other
               -- components must include them if they don't depend on the
               -- library.
               if ctype == LIB || pkgName `notElem` deps
-              then nonEmpty $ map Text.pack dataFiles
+              then nonEmpty $ dataFiles
               else Nothing
-          , mainFile =
-              Text.pack <$> mainFile
-         , privateAttrs = privAttrs
+          , mainFile = mainFile
+          , privateAttrs = privAttrs
         }
   where
-    pathToText = Text.pack . Path.toFilePath
+    pathToString = Path.toFilePath
 
     hiddenModules = case ctype of
       LIB -> nonEmpty [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
       _ -> Nothing
 
-    qualifiedModulePath = mconcat . intersperse "." . map Text.pack . Cabal.components
+    qualifiedModulePath = mconcat . intersperse "." . Cabal.components
 
     toToolName (Cabal.ExeDependency pkg exe _) =
-      ToolName (pkgNameToText pkg) (Text.pack $ Cabal.unUnqualComponentName exe)
+      ToolName (pkgNameToString pkg) (Cabal.unUnqualComponentName exe)
+
+    underscorify '-' = '_'
+    underscorify c = c
 
 -- | Thrown when we can't find the file path of a main
 -- file which is referenced in a Cabal file (hs-source-dirs + main-is).
@@ -272,18 +272,18 @@ findMainFile cabalFile mainFile hsSrcDirs = do
 
 pkgNamePrivAttr :: Cabal.PackageIdentifier -> Attributes
 pkgNamePrivAttr pkgId = [ ("pkgName", packageName) ]
-  where packageName = TextValue . pkgNameToText $ Cabal.pkgName pkgId
+  where packageName = StringValue . pkgNameToString $ Cabal.pkgName pkgId
 
 libPrivAttrs :: Cabal.PackageIdentifier -> Cabal.Library -> Attributes
 libPrivAttrs pkgId lib = pkgNameAttr ++ visibilityAttr
   where
     pkgNameAttr = pkgNamePrivAttr pkgId
     visibilityAttr = [ ("visibility", obtainVisibilityAttr) ]
-    obtainVisibilityAttr = TextValue $ case Cabal.libVisibility lib of
+    obtainVisibilityAttr = StringValue $ case Cabal.libVisibility lib of
                                              Cabal.LibraryVisibilityPrivate -> "private"
                                              _                              -> "public"
 
-componentTypeToRuleName :: ComponentType -> Text
+componentTypeToRuleName :: ComponentType -> String
 componentTypeToRuleName = \case
   BENCH -> "haskell_binary"
   EXE -> "haskell_binary"
@@ -307,7 +307,7 @@ data MissingModuleFile = MissingModuleFile
 -- @componentName@ is used for error reporting only.
 --
 findModulesPaths
-  :: Text -> Path b File -> [Path Rel Dir] -> [FilePath] -> IO [Path Rel File]
+  :: String -> Path b File -> [Path Rel Dir] -> [FilePath] -> IO [Path Rel File]
 findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames = do
   modulesAsPaths <- traverse Path.parseRelFile moduleNames
   concat <$> traverse findModules modulesAsPaths
@@ -318,22 +318,22 @@ findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames = do
       let raiseError = throwIO $ MissingModuleFile
             { modulePath = Path.toFilePath modulePath
             , cabalFile = Path.toFilePath cabalFilePath
-            , componentName = Text.unpack componentName
+            , componentName = componentName
             }
       findModulePaths cabalDir hsSourceDirs modulePath >>= \case
         [] -> raiseError
         foundModulePaths -> pure foundModulePaths
 
-depPackageNames :: Cabal.BuildInfo -> [Text]
+depPackageNames :: Cabal.BuildInfo -> [String]
 depPackageNames = concatMap depNames . Cabal.targetBuildDepends
     where
-      depNames :: Cabal.Dependency -> [Text]
+      depNames :: Cabal.Dependency -> [String]
       depNames dep =
         let
-          pkgName :: Text
-          pkgName = pkgNameToText $ Cabal.depPkgName dep
-          identifierOf :: Cabal.LibraryName -> Text
-          identifierOf (Cabal.LSubLibName name) = pkgName <> ":" <> Text.pack (Cabal.unUnqualComponentName name)
+          pkgName :: String
+          pkgName = pkgNameToString $ Cabal.depPkgName dep
+          identifierOf :: Cabal.LibraryName -> String
+          identifierOf (Cabal.LSubLibName name) = pkgName <> ":" <> Cabal.unUnqualComponentName name
           identifierOf _ = pkgName
         in
           map identifierOf $ Set.toList $ Cabal.depLibraries dep
@@ -363,15 +363,15 @@ findModulePaths parentDir hsSourceDirs modulePath =
     findExtensions exts filepath =
       filterM (\ext -> Path.addExtension ext filepath >>= Path.doesFileExist) exts
 
-pkgNameToText :: Cabal.PackageName -> Text
-pkgNameToText = Text.pack . Cabal.unPackageName
+pkgNameToString :: Cabal.PackageName -> String
+pkgNameToString = Cabal.unPackageName
 
 -- | Extracts ghc-options and language extensions and returns
 -- them as flags for ghc.
-optionsFromBuildInfo :: Cabal.BuildInfo -> [Text]
+optionsFromBuildInfo :: Cabal.BuildInfo -> [String]
 optionsFromBuildInfo bi =
-  map (("-X" <>) . Text.pack . Cabal.prettyShow) (Cabal.defaultExtensions bi)
-  ++ map Text.pack ghcOptions
+  map (("-X" <>) . Cabal.prettyShow) (Cabal.defaultExtensions bi)
+  ++ ghcOptions
   where
     ghcOptions =
       Cabal.cppOptions bi ++

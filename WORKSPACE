@@ -49,7 +49,7 @@ stack_snapshot(
         ],
     },
     packages = [
-        "aeson",
+        "json",
         "hspec",
         "path",
         "path-io",
@@ -57,7 +57,7 @@ stack_snapshot(
         "tasty-discover",
         "tasty-hspec",
     ],
-    snapshot = "lts-18.1",
+    snapshot = "lts-18.28",
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")

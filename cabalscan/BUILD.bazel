@@ -33,7 +33,7 @@ haskell_library(
         ":containers",
         ":filepath",
         ":text",
-        "@io_tweag_gazelle_cabal_deps//:aeson",
+        "@io_tweag_gazelle_cabal_deps//:json",
         "@io_tweag_gazelle_cabal_deps//:path",
         "@io_tweag_gazelle_cabal_deps//:path-io",
     ],
@@ -52,7 +52,7 @@ haskell_binary(
         ":cabalscan-library",
         ":containers",
         ":text",
-        "@io_tweag_gazelle_cabal_deps//:aeson",
+        "@io_tweag_gazelle_cabal_deps//:json",
     ],
 )
 

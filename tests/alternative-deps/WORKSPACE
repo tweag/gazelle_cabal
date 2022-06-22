@@ -45,7 +45,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
 
 gazelle_cabal_dependencies(
-    aeson = "@stackage-b//:aeson",
+    aeson = "@stackage-b//:json",
     path = "@stackage-b//:path",
     path_io = "@stackage-b//:path-io",
 )
@@ -53,12 +53,12 @@ gazelle_cabal_dependencies(
 stack_snapshot(
     name = "stackage-b",
     packages = [
-        "aeson",  # keep
+        "json",  # keep
         "inspection-testing",
         "path",  # keep
         "path-io",  #keep
     ],
-    snapshot = "lts-18.1",
+    snapshot = "lts-18.28",
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")

@@ -5,8 +5,7 @@ module Main where
 import CabalScan.Rules (RuleInfo)
 import CabalScan.RuleGenerator (generateRulesForCabalFile)
 import qualified CabalScan.Options as Options
-import qualified Data.Aeson as Aeson
-import qualified Data.ByteString.Lazy.Char8 as ByteString.Lazy
+import qualified Text.JSON as Json
 
 main :: IO ()
 main = do
@@ -15,4 +14,4 @@ main = do
     >>= printRuleInfos . concat
 
 printRuleInfos :: [RuleInfo] -> IO ()
-printRuleInfos = ByteString.Lazy.putStrLn . Aeson.encode
+printRuleInfos = putStrLn . Json.encode
