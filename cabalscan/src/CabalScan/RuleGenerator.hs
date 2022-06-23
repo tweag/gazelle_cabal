@@ -18,25 +18,25 @@ import Data.List (intersperse)
 import Data.List.NonEmpty (nonEmpty)
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Set.Internal as Set (toList)
-import qualified Distribution.Compiler as Cabal
-import qualified Distribution.ModuleName as Cabal
-import qualified Distribution.Package as Cabal
-import qualified Distribution.PackageDescription as Cabal
-import qualified Distribution.PackageDescription.Configuration as Cabal
-import qualified Distribution.PackageDescription.Parsec as Cabal
-import qualified Distribution.Types.ComponentRequestedSpec as Cabal
-import qualified Distribution.Types.ExeDependency as Cabal
-import qualified Distribution.Types.LibraryVisibility as Cabal
-import qualified Distribution.Types.UnqualComponentName as Cabal
-import qualified Distribution.Types.Version as Cabal
-import qualified Distribution.Pretty as Cabal
-import qualified Distribution.System as Cabal
-import qualified Distribution.Verbosity as Verbosity
 import Path (Path, Rel, Dir, File)
 import qualified Path as Path
 import qualified Path.IO as Path
 import CabalScan.Rules
 import System.FilePath (dropExtension)
+
+#if __GLASGOW_HASKELL__ == 810
+
+import qualified Cabal.Cabal_8_10 as Cabal
+
+#elif __GLASGOW_HASKELL__ == 900
+
+import qualified Cabal.Cabal_9_0 as Cabal
+
+#else
+
+import qualified Cabal.Cabal_9_2 as Cabal
+
+#endif
 
 generateRulesForCabalFile :: Path b File -> IO [RuleInfo]
 generateRulesForCabalFile cabalFilePath = do
@@ -387,7 +387,7 @@ data UnresolvedCabalDependencies = UnresolvedCabalDependencies
 readCabalFile :: Path b File -> IO Cabal.PackageDescription
 readCabalFile cabalFilePath = do
   let cabalFile = Path.toFilePath cabalFilePath
-  genericPkg <- Cabal.readGenericPackageDescription Verbosity.normal cabalFile
+  genericPkg <- Cabal.readGenericPackageDescription Cabal.normal cabalFile
   let flags = mempty
       componentSpec = Cabal.ComponentRequestedSpec
         { Cabal.testsRequested = True

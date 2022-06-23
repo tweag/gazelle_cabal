@@ -39,15 +39,15 @@ jobs:
           ln -s ../.bazelrc.local example/.bazelrc.local
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
       - name: Build & test
-        run: nix-shell --pure --run 'bazel test --test_output=all //...'
+        run: nix-shell --pure --run 'bazel test --config=${{ matrix.ghc-version }}' --test_output=all //...'
       - name: Test the example
         run: |
           cd example
-          nix-shell --pure --run 'bazel run //:gazelle'
+          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}''
           # Gazelle doesn't remove rules by default
           grep -q another-haskell-binary package-a/BUILD.bazel
-          nix-shell --pure --run 'bazel run //:gazelle -- fix -mode diff' || true
-          nix-shell --pure --run 'bazel run //:gazelle -- fix'
+          nix-shell --pure --run 'bazel run //:gazelle -- fix -mode diff --config=${{ matrix.ghc-version }}'' || true
+          nix-shell --pure --run 'bazel run //:gazelle -- fix --config=${{ matrix.ghc-version }}''
           # Test that fix kept and removed the expected rules
           echo "! grep -q another-haskell-binary package-a/BUILD.bazel"
           bash -c "! grep -q another-haskell-binary package-a/BUILD.bazel"
@@ -93,13 +93,13 @@ jobs:
           bash -cx "grep -q \":mtl\" package-b/BUILD.bazel"
           bash -cx "grep -q \"//package-c:mtl\" package-b/BUILD.bazel"
           # Test gazelle-update-repos
-          nix-shell --pure --run 'bazel run //:gazelle-update-repos'
-          nix-shell --pure --run 'bazel test //...'
+          nix-shell --pure --run 'bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}''
+          nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}''
       - name: Test alternative dependencies
         run: |
           cd tests/alternative-deps
-          nix-shell --pure --run 'bazel run //:gazelle'
-          nix-shell --pure --run 'bazel run //:gazelle-update-repos'
-          nix-shell --pure --run 'bazel test //...'
+          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}''
+          nix-shell --pure --run 'bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}''
+          nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}''
       - name: Test for buildifier suggestions
         run: nix-shell --pure --run 'bazel run //:buildifier-diff'

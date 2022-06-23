@@ -1,1 +1,7 @@
+common:ghc_8_10_7 --repo_env=GHC_VERSION=8.10.7
+
+common:ghc_9_0_2 --repo_env=GHC_VERSION=9.0.2
+
+common:ghc_9_2_2 --repo_env=GHC_VERSION=9.2.2
+
 try-import .bazelrc.local
