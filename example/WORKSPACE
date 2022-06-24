@@ -41,7 +41,7 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 # Haskell dependencies and toolchain
 ######################################
 
-load("@io_tweag_gazelle_haskell_modules//:config_settings/setup.bzl", "config_settings")
+load("@io_tweag_gazelle_cabal//:config_settings/setup.bzl", "config_settings")
 
 config_settings(name = "config_settings")
 
