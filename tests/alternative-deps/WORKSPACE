@@ -58,7 +58,16 @@ gazelle_cabal_dependencies(
 stack_snapshot(
     name = "stackage-b",
     components =
-        None if ghc_version == "8.10.7" else {
+        {
+            "tasty-discover": [
+                "lib",
+                "exe:tasty-discover",
+            ],
+        } if ghc_version == "8.10.7" else {
+            "tasty-discover": [
+                "lib",
+                "exe:tasty-discover",
+            ],
             "attoparsec": [
                 "lib",
                 "lib:attoparsec-internal",
