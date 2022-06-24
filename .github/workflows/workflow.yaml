@@ -48,7 +48,7 @@ jobs:
           # Gazelle doesn't remove rules by default
           grep -q another-haskell-binary package-a/BUILD.bazel
           nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }} -- fix -mode diff' || true
-          nix-shell --pure --run 'bazel run //:gazelle  --config=${{ matrix.ghc-version }}-- fix'
+          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }} -- fix'
           # Test that fix kept and removed the expected rules
           echo "! grep -q another-haskell-binary package-a/BUILD.bazel"
           bash -c "! grep -q another-haskell-binary package-a/BUILD.bazel"
