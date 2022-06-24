@@ -72,7 +72,7 @@ stack_snapshot(
         None if ghc_version == "8.10.7" else {
             "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
         },
-    local_snapshot = "//:snapshot-" + ghc_version + ".yaml",
+    local_snapshot = "@io_tweag_gazelle_cabal//:snapshot-" + ghc_version + ".yaml",
     packages = [
         "Cabal",
         "json",  # keep
