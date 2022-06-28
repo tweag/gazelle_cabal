@@ -10,11 +10,12 @@ local_repository(
 ##########################
 # rules_haskell preamble
 ##########################
+
 http_archive(
     name = "rules_haskell",
-    sha256 = "851e16edc7c33b977649d66f2f587071dde178a6e5bcfeca5fe9ebbe81924334",
-    strip_prefix = "rules_haskell-0.14",
-    url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.14.tar.gz",
+    sha256 = "a8e029b9ebf2e8fd79f99134acefd99310f9427951b5260ce4c3cae88da57f1e",
+    strip_prefix = "rules_haskell-97220908a5950cb56638b893a384bd92a19188e2",
+    urls = ["https://github.com/tweag/rules_haskell/archive/97220908a5950cb56638b893a384bd92a19188e2.zip"],
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
