@@ -7,12 +7,12 @@ def _gazelle_cabal_dependencies_impl(repository_ctx):
 package(default_visibility = ["//visibility:public"])
 
 alias(name="json", actual="{json}")
-alias(name="path", actual="{path}")
-alias(name="path-io", actual="{path_io}")
+alias(name="filepath", actual="{filepath}")
+alias(name="directory", actual="{directory}")
         '''.format(
             json = repository_ctx.attr.json,
-            path = repository_ctx.attr.path,
-            path_io = repository_ctx.attr.path_io,
+            filepath = repository_ctx.attr.filepath,
+            directory = repository_ctx.attr.directory,
         ),
         executable = False,
     )
@@ -22,8 +22,8 @@ _gazelle_cabal_dependencies = repository_rule(
     local = True,
     attrs = {
         "json": attr.label(default = "@stackage//:json"),
-        "path": attr.label(default = "@stackage//:path"),
-        "path_io": attr.label(default = "@stackage//:path-io"),
+        "filepath": attr.label(default = "@stackage//:filepath"),
+        "directory": attr.label(default = "@stackage//:directory"),
     },
 )
 
@@ -44,8 +44,8 @@ def gazelle_cabal_dependencies(**kargs):
       # Dependencies overriden
       gazelle_cabal_dependencies(
           json = "@someother//:some-other-json",
-          path = "@someother//:some-path",
-          path_io = "@someother//:another-path-io",
+          filepath = "@someother//:some-filepath",
+          directory = "@someother//:another-directory",
       )
 
       ```

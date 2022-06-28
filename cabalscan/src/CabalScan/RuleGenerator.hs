@@ -18,9 +18,8 @@ import Data.List (intersperse)
 import Data.List.NonEmpty (nonEmpty)
 import Data.Maybe (catMaybes, listToMaybe)
 import Data.Set.Internal as Set (toList)
-import Path (Path, Rel, Dir, File)
-import qualified Path as Path
-import qualified Path.IO as Path
+import qualified System.FilePath as Path
+import qualified System.Directory as Path
 import CabalScan.Rules
 import System.FilePath (dropExtension)
 
@@ -38,7 +37,7 @@ import qualified Cabal.Cabal_9_2 as Cabal
 
 #endif
 
-generateRulesForCabalFile :: Path b File -> IO [RuleInfo]
+generateRulesForCabalFile :: FilePath -> IO [RuleInfo]
 generateRulesForCabalFile cabalFilePath = do
   pd <- readCabalFile cabalFilePath
   let libraries = Cabal.allLibraries pd
@@ -58,7 +57,7 @@ generateRulesForCabalFile cabalFilePath = do
   return $ catMaybes $ libraryRules ++ executablesRules ++ testSuiteRules ++ benchmarkRules
 
 generateLibraryRule
-  :: Path b File
+  :: FilePath
   -> Cabal.PackageIdentifier
   -> [FilePath]
   -> Cabal.Library
@@ -84,7 +83,7 @@ generateLibraryRule cabalFilePath pkgId dataFiles lib = do
     obtainLibraryName _ = pkgNameToString $ Cabal.pkgName pkgId
 
 generateBinaryRule
-  :: Path b File
+  :: FilePath
   -> Cabal.PackageIdentifier
   -> [FilePath]
   -> Cabal.Executable
@@ -115,7 +114,7 @@ generateBinaryRule cabalFilePath pkgId dataFiles executable = do
     privAttrs
 
 generateTestRule
-  :: Path b File
+  :: FilePath
   -> Cabal.PackageIdentifier
   -> [FilePath]
   -> Cabal.TestSuite
@@ -140,7 +139,7 @@ generateTestRule cabalFilePath pkgId dataFiles testsuite = do
     privAttrs
 
 generateBenchmarkRule
-  :: Path b File
+  :: FilePath
   -> Cabal.PackageIdentifier
   -> [FilePath]
   -> Cabal.Benchmark
@@ -165,7 +164,7 @@ generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
     privAttrs
 
 generateRule
-  :: Path b File
+  :: FilePath
   -> Cabal.PackageIdentifier
   -> [FilePath]
   -> Cabal.BuildInfo
@@ -183,13 +182,13 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
         "-DVERSION_" <> map underscorify pkgName <> "=" <> show pkgVersion
       otherModules = map Cabal.toFilePath (Cabal.otherModules bi)
       deps =  depPackageNames bi
-  hsSourceDirs <- mapM Path.parseRelDir (Cabal.hsSourceDirs bi)
+  let hsSourceDirs = Cabal.hsSourceDirs bi
   someModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs someModules
   otherModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs otherModules
   return $ Just $ RuleInfo
         { kind = componentTypeToRuleName ctype
         , name = attrName
-        , cabalFile = pathToString cabalFilePath
+        , cabalFile = cabalFilePath
         , importData = ImportData
           { deps
           , ghcOpts = versionMacro : optionsFromBuildInfo bi
@@ -197,7 +196,7 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
         , version = pkgVersion
-        , srcs = map pathToString $ someModulePaths ++ otherModulePaths
+        , srcs = someModulePaths ++ otherModulePaths
         , hiddenModules
         , dataAttr =
             -- The library always includes data files, and the other
@@ -210,8 +209,6 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
         , privateAttrs = privAttrs
         }
   where
-    pathToString = Path.toFilePath
-
     hiddenModules = case ctype of
       LIB -> nonEmpty [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
       _ -> Nothing
@@ -249,25 +246,23 @@ data MultipleMainFilesFound = MultipleMainFilesFound
 -- the Cabal file is. It does simple concatenation between @hsSrcDir@ and
 -- the @mainFile@ and validates the existence of such path.
 --
-findMainFile :: Path b File -> FilePath -> [FilePath] -> IO FilePath
-findMainFile cabalFile mainFile hsSrcDirs = do
-  let parentDir = Path.parent cabalFile
-  mainPath <- Path.parseRelFile mainFile
-  srcDirs <- mapM Path.parseRelDir hsSrcDirs
-  let mainPaths = [ dir Path.</> mainPath | dir <- srcDirs ]
-  validPaths <- filterM (Path.doesFileExist . ((Path.</>) parentDir)) mainPaths
+findMainFile :: FilePath -> FilePath -> [FilePath] -> IO FilePath
+findMainFile cabalFile mainPath hsSrcDirs = do
+  let parentDir = Path.takeDirectory cabalFile
+  let mainPaths = [ dir Path.</> mainPath | dir <- hsSrcDirs ]
+  validPaths <- filterM (Path.doesPathExist . (Path.</>) parentDir) mainPaths
   case validPaths of
-    [path] -> return $ Path.toFilePath path
+    [path] -> return path
     []   -> throwIO MainFileNotFound
-             { cabalFile = Path.toFilePath cabalFile
-             , mainFile = mainFile
+             { cabalFile = cabalFile
+             , mainFile = mainPath
              , hsSourceDirs = hsSrcDirs
              }
     paths     -> throwIO MultipleMainFilesFound
-             { cabalFile = Path.toFilePath cabalFile
-             , mainFile = mainFile
+             { cabalFile = cabalFile
+             , mainFile = mainPath
              , hsSourceDirs = hsSrcDirs
-             , foundFiles = map Path.toFilePath paths
+             , foundFiles = paths
              }
 
 pkgNamePrivAttr :: Cabal.PackageIdentifier -> Attributes
@@ -307,17 +302,16 @@ data MissingModuleFile = MissingModuleFile
 -- @componentName@ is used for error reporting only.
 --
 findModulesPaths
-  :: String -> Path b File -> [Path Rel Dir] -> [FilePath] -> IO [Path Rel File]
+  :: String -> FilePath -> [FilePath] -> [FilePath] -> IO [FilePath]
 findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames = do
-  modulesAsPaths <- traverse Path.parseRelFile moduleNames
-  concat <$> traverse findModules modulesAsPaths
+  concat <$> traverse findModules moduleNames
   where
-    cabalDir = Path.parent cabalFilePath
-    findModules :: Path Rel File -> IO [Path Rel File]
+    cabalDir = Path.takeDirectory cabalFilePath
+    findModules :: FilePath -> IO [FilePath]
     findModules modulePath = do
       let raiseError = throwIO $ MissingModuleFile
-            { modulePath = Path.toFilePath modulePath
-            , cabalFile = Path.toFilePath cabalFilePath
+            { modulePath = modulePath
+            , cabalFile = cabalFilePath
             , componentName = componentName
             }
       findModulePaths cabalDir hsSourceDirs modulePath >>= \case
@@ -347,7 +341,7 @@ depPackageNames = concatMap depNames . Cabal.targetBuildDepends
 -- to @parentDir@.
 --
 -- The directories in @hsSourceDirs@ must be relative to @parentDir@.
-findModulePaths :: Path b Dir -> [Path Rel Dir] -> Path Rel File -> IO [Path Rel File]
+findModulePaths :: FilePath -> [FilePath] -> FilePath -> IO [FilePath]
 findModulePaths parentDir hsSourceDirs modulePath =
   case hsSourceDirs of
     [] -> return []
@@ -357,11 +351,11 @@ findModulePaths parentDir hsSourceDirs modulePath =
 
       findExtensions extensions fullModulePath >>= \case
         [] -> findModulePaths parentDir otherDirs modulePath
-        foundExtensions -> traverse (\ext -> Path.addExtension ext (srcDir Path.</> modulePath)) foundExtensions
+        foundExtensions -> return $ map (Path.addExtension (srcDir Path.</> modulePath)) foundExtensions
   where
-    findExtensions :: [String] -> Path absrel File -> IO [String]
+    findExtensions :: [String] -> FilePath -> IO [String]
     findExtensions exts filepath =
-      filterM (\ext -> Path.addExtension ext filepath >>= Path.doesFileExist) exts
+      filterM (Path.doesPathExist . Path.addExtension filepath) exts
 
 pkgNameToString :: Cabal.PackageName -> String
 pkgNameToString = Cabal.unPackageName
@@ -384,9 +378,9 @@ data UnresolvedCabalDependencies = UnresolvedCabalDependencies
   }
   deriving (Show, Exception)
 
-readCabalFile :: Path b File -> IO Cabal.PackageDescription
+readCabalFile :: FilePath -> IO Cabal.PackageDescription
 readCabalFile cabalFilePath = do
-  let cabalFile = Path.toFilePath cabalFilePath
+  let cabalFile = cabalFilePath
   genericPkg <- Cabal.readGenericPackageDescription Cabal.silent cabalFile
   let flags = mempty
       componentSpec = Cabal.ComponentRequestedSpec

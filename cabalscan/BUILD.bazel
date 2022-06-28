@@ -16,6 +16,8 @@ haskell_toolchain_library(name = "Cabal")
 
 haskell_toolchain_library(name = "containers")
 
+haskell_toolchain_library(name = "directory")
+
 haskell_toolchain_library(name = "filepath")
 
 haskell_library(
@@ -29,10 +31,9 @@ haskell_library(
         ":Cabal",
         ":base",
         ":containers",
+        ":directory",
         ":filepath",
         "@io_tweag_gazelle_cabal_deps//:json",
-        "@io_tweag_gazelle_cabal_deps//:path",
-        "@io_tweag_gazelle_cabal_deps//:path-io",
     ],
 )
 
@@ -66,10 +67,11 @@ haskell_test(
     deps = [
         ":base",
         ":cabalscan-library",
+        ":directory",
+        ":filepath",
         "@stackage//:hspec",
-        "@stackage//:path",
-        "@stackage//:path-io",
         "@stackage//:tasty",
         "@stackage//:tasty-hspec",
+        "@stackage//:temporary",
     ],
 )

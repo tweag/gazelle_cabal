@@ -50,9 +50,9 @@ load("@config_settings//:info.bzl", "ghc_version")
 load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
 
 gazelle_cabal_dependencies(
+    directory = "@stackage-b//:directory",
+    filepath = "@stackage-b//:filepath",
     json = "@stackage-b//:json",
-    path = "@stackage-b//:path",
-    path_io = "@stackage-b//:path-io",
 )
 
 stack_snapshot(
@@ -65,46 +65,16 @@ stack_snapshot(
 
 stack_snapshot(
     name = "stackage-b",
-    components =
-        {
-            "tasty-discover": [
-                "lib",
-                "exe:tasty-discover",
-            ],
-        } if ghc_version == "8.10.7" else {
-            "tasty-discover": [
-                "lib",
-                "exe:tasty-discover",
-            ],
-            "attoparsec": [
-                "lib",
-                "lib:attoparsec-internal",
-            ],
-        },
-    components_dependencies =
-        None if ghc_version == "8.10.7" else {
-            "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
-        },
     local_snapshot = "@io_tweag_gazelle_cabal//:snapshot-" + ghc_version + ".yaml",
     packages = [
-        "inspection-testing",
+        "directory",  #keep
+        "filepath",  #keep
         "json",  # keep
-        "path",  # keep
-        "path-io",  #keep
-        "tasty-discover",
     ],
     setup_deps = {
-        "transformers-compat": ["@stackage//:Cabal"],
-        "hspec-discover": ["@stackage//:Cabal"],
         "call-stack": ["@stackage//:Cabal"],
-        "HUnit": ["@stackage//:Cabal"],
-        "quickcheck": ["@stackage//:Cabal"],
-        "hspec-expectations": ["@stackage//:Cabal"],
-        "quickcheck-io": ["@stackage//:Cabal"],
         "tasty-discover": ["@stackage//:Cabal"],
-        "hspec-core": ["@stackage//:Cabal"],
-        "bifunctors": ["@stackage//:Cabal"],
-        "hspec": ["@stackage//:Cabal"],
+        "transformers-compat": ["@stackage//:Cabal"],
     },
 )
 

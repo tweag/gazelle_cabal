@@ -53,43 +53,29 @@ stack_snapshot(
                 "lib",
                 "exe:tasty-discover",
             ],
-        } if ghc_version == "8.10.7" else {
-            "tasty-discover": [
-                "lib",
-                "exe:tasty-discover",
-            ],
-            "attoparsec": [
-                "lib",
-                "lib:attoparsec-internal",
-            ],
-        },
-    components_dependencies =
-        None if ghc_version == "8.10.7" else {
-            "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
         },
     local_snapshot = "//:snapshot-" + ghc_version + ".yaml",
     packages = [
         "Cabal",
+        "directory",
+        "filepath",
         "hspec",
         "json",
-        "path",
-        "path-io",
         "tasty",
         "tasty-discover",
         "tasty-hspec",
+        "temporary",
     ],
     setup_deps = {
-        "transformers-compat": ["@stackage//:Cabal"],
-        "hspec-discover": ["@stackage//:Cabal"],
         "call-stack": ["@stackage//:Cabal"],
-        "HUnit": ["@stackage//:Cabal"],
-        "quickcheck": ["@stackage//:Cabal"],
+        "hspec": ["@stackage//:Cabal"],
+        "hspec-core": ["@stackage//:Cabal"],
+        "hspec-discover": ["@stackage//:Cabal"],
         "hspec-expectations": ["@stackage//:Cabal"],
+        "HUnit": ["@stackage//:Cabal"],
         "quickcheck-io": ["@stackage//:Cabal"],
         "tasty-discover": ["@stackage//:Cabal"],
-        "hspec-core": ["@stackage//:Cabal"],
-        "bifunctors": ["@stackage//:Cabal"],
-        "hspec": ["@stackage//:Cabal"],
+        "transformers-compat": ["@stackage//:Cabal"],
     },
 )
 
