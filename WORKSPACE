@@ -8,9 +8,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "rules_haskell",
-    sha256 = "851e16edc7c33b977649d66f2f587071dde178a6e5bcfeca5fe9ebbe81924334",
-    strip_prefix = "rules_haskell-0.14",
-    url = "https://github.com/tweag/rules_haskell/archive/refs/tags/v0.14.tar.gz",
+    sha256 = "a8e029b9ebf2e8fd79f99134acefd99310f9427951b5260ce4c3cae88da57f1e",
+    strip_prefix = "rules_haskell-97220908a5950cb56638b893a384bd92a19188e2",
+    urls = ["https://github.com/tweag/rules_haskell/archive/97220908a5950cb56638b893a384bd92a19188e2.zip"],
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
@@ -36,19 +36,40 @@ load("@rules_haskell//haskell:cabal.bzl", "stack_snapshot")
 # Haskell dependencies and toolchain
 ######################################
 
+load("//:config_settings/setup.bzl", "config_settings")
+
+config_settings(name = "config_settings")
+
+load("@config_settings//:info.bzl", "ghc_version")
 load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
 
 gazelle_cabal_dependencies()
 
 stack_snapshot(
     name = "stackage",
-    components = {
-        "tasty-discover": [
-            "lib",
-            "exe:tasty-discover",
-        ],
-    },
+    components =
+        {
+            "tasty-discover": [
+                "lib",
+                "exe:tasty-discover",
+            ],
+        } if ghc_version == "8.10.7" else {
+            "tasty-discover": [
+                "lib",
+                "exe:tasty-discover",
+            ],
+            "attoparsec": [
+                "lib",
+                "lib:attoparsec-internal",
+            ],
+        },
+    components_dependencies =
+        None if ghc_version == "8.10.7" else {
+            "attoparsec": """{"lib:attoparsec": ["lib:attoparsec-internal"]}""",
+        },
+    local_snapshot = "//:snapshot-" + ghc_version + ".yaml",
     packages = [
+        "Cabal",
         "hspec",
         "json",
         "path",
@@ -57,13 +78,26 @@ stack_snapshot(
         "tasty-discover",
         "tasty-hspec",
     ],
-    snapshot = "lts-18.28",
+    setup_deps = {
+        "transformers-compat": ["@stackage//:Cabal"],
+        "hspec-discover": ["@stackage//:Cabal"],
+        "call-stack": ["@stackage//:Cabal"],
+        "HUnit": ["@stackage//:Cabal"],
+        "quickcheck": ["@stackage//:Cabal"],
+        "hspec-expectations": ["@stackage//:Cabal"],
+        "quickcheck-io": ["@stackage//:Cabal"],
+        "tasty-discover": ["@stackage//:Cabal"],
+        "hspec-core": ["@stackage//:Cabal"],
+        "bifunctors": ["@stackage//:Cabal"],
+        "hspec": ["@stackage//:Cabal"],
+    },
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
 
 haskell_register_ghc_nixpkgs(
-    attribute_path = "haskell.compiler.ghc8107",
+    attribute_path =
+        "haskell.compiler.ghc" + ghc_version.replace(".", ""),
     ghcopts = [
         "-Werror",
         "-Wall",
@@ -72,7 +106,7 @@ haskell_register_ghc_nixpkgs(
         "-Wredundant-constraints",
     ],
     repositories = {"nixpkgs": "@nixpkgs"},
-    version = "8.10.7",
+    version = ghc_version,
 )
 
 ###############
