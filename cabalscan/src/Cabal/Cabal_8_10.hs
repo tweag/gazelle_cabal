@@ -25,7 +25,7 @@ import Distribution.Types.UnqualComponentName as Cabal (unUnqualComponentName)
 import Distribution.Types.Version as Cabal (mkVersion)
 import Distribution.Pretty as Cabal (prettyShow)
 import Distribution.System as Cabal (Platform(Platform), buildArch, buildOS)
-import Distribution.Verbosity as Cabal (normal)
+import Distribution.Verbosity as Cabal (silent)
 
 #else
 

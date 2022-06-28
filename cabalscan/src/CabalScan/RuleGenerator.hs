@@ -196,18 +196,18 @@ generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFil
           , extraLibraries = Cabal.extraLibs bi
           , tools = map toToolName $ Cabal.buildToolDepends bi
           }
-          , version = pkgVersion
-          , srcs = map pathToString $ someModulePaths ++ otherModulePaths
-          , hiddenModules
-          , dataAttr =
-              -- The library always includes data files, and the other
-              -- components must include them if they don't depend on the
-              -- library.
-              if ctype == LIB || pkgName `notElem` deps
-              then nonEmpty $ dataFiles
-              else Nothing
-          , mainFile = mainFile
-          , privateAttrs = privAttrs
+        , version = pkgVersion
+        , srcs = map pathToString $ someModulePaths ++ otherModulePaths
+        , hiddenModules
+        , dataAttr =
+            -- The library always includes data files, and the other
+            -- components must include them if they don't depend on the
+            -- library.
+            if ctype == LIB || pkgName `notElem` deps
+            then nonEmpty dataFiles
+            else Nothing
+        , mainFile = mainFile
+        , privateAttrs = privAttrs
         }
   where
     pathToString = Path.toFilePath
@@ -387,7 +387,7 @@ data UnresolvedCabalDependencies = UnresolvedCabalDependencies
 readCabalFile :: Path b File -> IO Cabal.PackageDescription
 readCabalFile cabalFilePath = do
   let cabalFile = Path.toFilePath cabalFilePath
-  genericPkg <- Cabal.readGenericPackageDescription Cabal.normal cabalFile
+  genericPkg <- Cabal.readGenericPackageDescription Cabal.silent cabalFile
   let flags = mempty
       componentSpec = Cabal.ComponentRequestedSpec
         { Cabal.testsRequested = True
