@@ -76,17 +76,17 @@ stack_snapshot(
         "path-io",  #keep
     ],
     setup_deps = {
-        "transformers-compat": ["@stackage//:Cabal"],
-        "hspec-discover": ["@stackage//:Cabal"],
-        "call-stack": ["@stackage//:Cabal"],
-        "HUnit": ["@stackage//:Cabal"],
-        "quickcheck": ["@stackage//:Cabal"],
-        "hspec-expectations": ["@stackage//:Cabal"],
-        "quickcheck-io": ["@stackage//:Cabal"],
-        "tasty-discover": ["@stackage//:Cabal"],
-        "hspec-core": ["@stackage//:Cabal"],
-        "bifunctors": ["@stackage//:Cabal"],
-        "hspec": ["@stackage//:Cabal"],
+        "transformers-compat": ["@stackage-b//:Cabal"],
+        "hspec-discover": ["@stackage-b//:Cabal"],
+        "call-stack": ["@stackage-b//:Cabal"],
+        "HUnit": ["@stackage-b//:Cabal"],
+        "quickcheck": ["@stackage-b//:Cabal"],
+        "hspec-expectations": ["@stackage-b//:Cabal"],
+        "quickcheck-io": ["@stackage-b//:Cabal"],
+        "tasty-discover": ["@stackage-b//:Cabal"],
+        "hspec-core": ["@stackage-b//:Cabal"],
+        "bifunctors": ["@stackage-b//:Cabal"],
+        "hspec": ["@stackage-b//:Cabal"],
     },
 )
 
