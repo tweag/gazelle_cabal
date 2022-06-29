@@ -4,57 +4,58 @@ module CabalScan.RuleGeneratorSpec where
 
 import Test.Hspec
 import CabalScan.RuleGenerator (findModulePaths)
-import qualified Path
-import qualified Path.IO as Path
+import qualified System.FilePath as Path
+import qualified System.Directory as Path
+import qualified System.IO.Temp as Temp
 
 spec_toLibraryTarget :: Spec
 spec_toLibraryTarget = do
   describe "RuleGenerator.findModulePaths" $ do
     it "should find modules in multiple directories" $ do
-      cwd <- Path.getCurrentDir
-      Path.withTempDir cwd "findModulePaths" $ \dir -> do
-        aRel <- Path.parseRelDir "a"
-        Path.createDir (dir Path.</> aRel)
-        bRel <- Path.parseRelDir "b"
-        Path.createDir (dir Path.</> bRel)
-        modRel <- Path.parseRelFile "A/B/C"
-        foundModulePath <- (bRel Path.</>) <$> Path.addExtension ".hs" modRel
+      cwd <- Path.getCurrentDirectory
+      Temp.withTempDirectory cwd "findModulePaths" $ \dir -> do
+        let aRel = "a"
+        Path.createDirectory (dir Path.</> aRel)
+        let bRel = "b"
+        Path.createDirectory (dir Path.</> bRel)
+        let modRel = "A/B/C"
+        let foundModulePath = bRel Path.</> modRel Path.<.> ".hs"
         let expected = [foundModulePath]
-        Path.ensureDir $ Path.parent (dir Path.</> bRel Path.</> modRel)
+        Path.createDirectoryIfMissing True $ Path.takeDirectory (dir Path.</> bRel Path.</> modRel)
 
-        writeFile (Path.toFilePath (dir Path.</> foundModulePath) ) ""
+        writeFile (dir Path.</> foundModulePath) ""
         findModulePaths dir [aRel, bRel] modRel
           `shouldMatchListIO` expected
 
     it "should find hs-boot files" $ do
-      cwd <- Path.getCurrentDir
-      Path.withTempDir cwd "findModulePaths" $ \dir -> do
-        bRel <- Path.parseRelDir "b"
-        Path.createDir (dir Path.</> bRel)
-        modRel <- Path.parseRelFile "A/B/C"
-        foundModulePath <- (bRel Path.</>) <$> Path.addExtension ".hs" modRel
-        foundBootPath <- (bRel Path.</>) <$> Path.addExtension ".hs-boot" modRel
+      cwd <- Path.getCurrentDirectory
+      Temp.withTempDirectory cwd "findModulePaths" $ \dir -> do
+        let bRel = "b"
+        Path.createDirectory (dir Path.</> bRel)
+        let modRel = "A/B/C"
+        let foundModulePath = bRel Path.</> modRel Path.<.> ".hs"
+        let foundBootPath = bRel Path.</> modRel Path.<.> ".hs-boot"
         let expected = [foundModulePath, foundBootPath]
-        Path.ensureDir $ Path.parent (dir Path.</> bRel Path.</> modRel)
+        Path.createDirectoryIfMissing True $ Path.takeDirectory (dir Path.</> bRel Path.</> modRel)
 
-        writeFile (Path.toFilePath (dir Path.</> foundModulePath) ) ""
-        writeFile (Path.toFilePath (dir Path.</> foundBootPath) ) ""
+        writeFile (dir Path.</> foundModulePath) ""
+        writeFile (dir Path.</> foundBootPath) ""
         findModulePaths dir [bRel] modRel
           `shouldMatchListIO` expected
 
     it "should find lhs-boot files" $ do
-      cwd <- Path.getCurrentDir
-      Path.withTempDir cwd "findModulePaths" $ \dir -> do
-        bRel <- Path.parseRelDir "b"
-        Path.createDir (dir Path.</> bRel)
-        modRel <- Path.parseRelFile "A/B/C"
-        foundModulePath <- (bRel Path.</>) <$> Path.addExtension ".lhs" modRel
-        foundBootPath <- (bRel Path.</>) <$> Path.addExtension ".lhs-boot" modRel
+      cwd <- Path.getCurrentDirectory
+      Temp.withTempDirectory cwd "findModulePaths" $ \dir -> do
+        let bRel = "b"
+        Path.createDirectory (dir Path.</> bRel)
+        let modRel = "A/B/C"
+        let foundModulePath = bRel Path.</> modRel Path.<.> ".lhs"
+        let foundBootPath = bRel Path.</> modRel Path.<.> ".lhs-boot"
         let expected = [foundModulePath, foundBootPath]
-        Path.ensureDir $ Path.parent (dir Path.</> bRel Path.</> modRel)
+        Path.createDirectoryIfMissing True $ Path.takeDirectory (dir Path.</> bRel Path.</> modRel)
 
-        writeFile (Path.toFilePath (dir Path.</> foundModulePath) ) ""
-        writeFile (Path.toFilePath (dir Path.</> foundBootPath) ) ""
+        writeFile (dir Path.</> foundModulePath) ""
+        writeFile (dir Path.</> foundBootPath) ""
         findModulePaths dir [bRel] modRel
           `shouldMatchListIO` expected
 
