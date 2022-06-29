@@ -76,17 +76,9 @@ stack_snapshot(
     local_snapshot = "@io_tweag_gazelle_cabal//:snapshot-" + ghc_version + ".yaml",
     packages = [
         "Cabal",  #keep
-        "base",
-        "inspection-testing",
         "json",  # keep
-        "mtl",
         "path",  # keep
         "path-io",  #keep
-        "tasty",
-        "tasty-discover",
-        "tasty-hunit",
-        "text",
-        "void",
     ],
     setup_deps = {
         "transformers-compat": ["@stackage//:Cabal"],

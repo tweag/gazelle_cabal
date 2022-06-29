@@ -91,7 +91,6 @@ stack_snapshot(
         "json",  # keep
         "path",  # keep
         "path-io",  #keep
-        "tasty-discover",
     ],
     setup_deps = {
         "transformers-compat": ["@stackage//:Cabal"],
