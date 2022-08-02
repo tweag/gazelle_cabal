@@ -47,6 +47,16 @@ stack_snapshot(
     snapshot = "lts-18.28",
 )
 ```
+Right now there are also some issues with `gazelle` and as a temporary fix you need to include the following in your `WORKSPACE`:
+```python
+go_repository(
+    name = "org_golang_x_xerrors",
+    importpath = "golang.org/x/xerrors",
+    sum = "h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=",
+    version = "v0.0.0-20200804184101-5ec99f83aff1",
+)
+```
+
 Should Haskell packages need to be grabbed from elsewhere, alternative
 labels can be provided to [gazelle_cabal_dependencies][gazelle_cabal_dependencies].
 
