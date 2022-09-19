@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"strconv"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -155,7 +156,7 @@ func rel(lbl label.Label, from label.Label) label.Label {
 // haskell_library are assumed to be local. There rest of the
 // dependencies are assumed to come from packageRepo.
 func setDepsAndPluginsAttributes(
-    extraLibraries []label.Label,
+	extraLibraries []label.Label,
 	packageRepo string,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
@@ -253,7 +254,7 @@ func getRuleIndexKeys(depName string, from label.Label, cabalPkgName string) []s
 	// colon prefix detected
 	packagePrefix := splitted[0]
 	libraryName := splitted[1]
-	if (packagePrefix == cabalPkgName) {
+	if packagePrefix == cabalPkgName {
 		// the package prefix leads to a sub-library of the same package
 		return []string{
 			fmt.Sprintf(format, privatePrefix, packagePrefix, libraryName),
@@ -408,7 +409,51 @@ func mapSortedStringKeys(m map[string]bool) []string {
 		i++
 	}
 	sort.Strings(ss)
-	return ss
+	s_result := removeEquivalent(samePackage, ss)
+	return s_result
+}
+
+// This function assumes that equivalent elements are bundled and only keeps the last element of each equivalence class.
+func removeEquivalent(equiv func(string, string) bool, s []string) []string {
+	if len(s) < 1 {
+		return s
+	}
+
+	first_free_position := 1
+	for curr := 1; curr < len(s); curr++ {
+		if equiv(s[first_free_position-1], s[curr]) {
+			// If the last added element is equivalent is considered one,
+			// then we move the cursor back so that the currently considered element
+			// replace the previously added one.
+			// This function is only keeping the last representative of the equivalence class
+			// because it is used to deal with packages having or not a version number,
+			// and in case both option are available, the version  number should be kept.
+			first_free_position--
+		}
+		s[first_free_position] = s[curr]
+		first_free_position++
+	}
+
+	return s[:first_free_position]
+}
+
+func samePackage(s1 string, s2 string) bool {
+	ss1 := chopVersionNumber(s1)
+	ss2 := chopVersionNumber(s2)
+	return ss1 == ss2
+}
+
+func chopVersionNumber(s string) string {
+	l := strings.Split(s, "-")
+	n := len(l)
+	// strconv.Atoi converts a string to an integer,
+	// and potentially outputs an error message.
+	_, err := strconv.Atoi(strings.ReplaceAll(l[n-1], ".", ""))
+	// If the conversion succeeded, the error is 'nil'.
+	if err == nil {
+		return strings.Join(l[:n-1], "-")
+	}
+	return s
 }
 
 // label.Parse chokes on hyphenated repo names with
