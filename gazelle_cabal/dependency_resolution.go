@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"strconv"
+	"regexp"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -413,7 +413,15 @@ func mapSortedStringKeys(m map[string]bool) []string {
 	return s_result
 }
 
-// This function assumes that equivalent elements are bundled and only keeps the last element of each equivalence class.
+// This function assumes that equivalent elements are bundled.
+// Hence, the input list should be preprocessed with a function ensuring this property.
+//
+// In our use-case, it means that
+// the input list must be sorted.
+//
+// This function is only keeping the last representative of the equivalence class.
+// The rationale is it is used to deal with packages having or not a version number,
+// and in case both option are available, the version  number should be kept.
 func removeEquivalent(equiv func(string, string) bool, s []string) []string {
 	if len(s) < 1 {
 		return s
@@ -422,35 +430,31 @@ func removeEquivalent(equiv func(string, string) bool, s []string) []string {
 	first_free_position := 1
 	for curr := 1; curr < len(s); curr++ {
 		if equiv(s[first_free_position-1], s[curr]) {
-			// If the last added element is equivalent is considered one,
-			// then we move the cursor back so that the currently considered element
-			// replace the previously added one.
-			// This function is only keeping the last representative of the equivalence class
-			// because it is used to deal with packages having or not a version number,
-			// and in case both option are available, the version  number should be kept.
-			first_free_position--
+			s[first_free_position-1] = s[curr]
+		} else {
+			s[first_free_position] = s[curr]
+			first_free_position++
 		}
-		s[first_free_position] = s[curr]
-		first_free_position++
 	}
 
 	return s[:first_free_position]
 }
 
+// The same package should not appear twice in a 'stack_snapshot' rule.
+// See https://github.com/tweag/gazelle_cabal/issue/46
 func samePackage(s1 string, s2 string) bool {
 	ss1 := chopVersionNumber(s1)
 	ss2 := chopVersionNumber(s2)
 	return ss1 == ss2
 }
 
+// Strips a suffix "-digit+[.digit+]*" from the given string if present.
+// Otherwise returns the string unmodified.
 func chopVersionNumber(s string) string {
 	l := strings.Split(s, "-")
 	n := len(l)
-	// strconv.Atoi converts a string to an integer,
-	// and potentially outputs an error message.
-	_, err := strconv.Atoi(strings.ReplaceAll(l[n-1], ".", ""))
-	// If the conversion succeeded, the error is 'nil'.
-	if err == nil {
+	matched, _ := regexp.MatchString(`^[0-9]+(\.[0-9]+)*$`, l[n-1])
+	if matched {
 		return strings.Join(l[:n-1], "-")
 	}
 	return s
