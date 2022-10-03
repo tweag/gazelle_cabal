@@ -454,15 +454,15 @@ func samePackage(s1 string, s2 string) bool {
 
 // Strips a suffix "-digit+[.digit+]*" from the given string if present.
 // Otherwise returns the string unmodified.
-regexp.Regexp chopVersionNumberRegexp = regexp.Compile(`-[0-9]+(\.[0-9]+)*$`)
+const chopVersionNumberRegexp regexp.Regexp = regexp.Compile(`-[0-9]+(\.[0-9]+)*$`)
 
 func chopVersionNumber(s string) string {
-    loc := chopVersionNumberRegexp.FindStringIndex(s)
-    if loc == nil {
-        return s
-    } else {
-        return s[:loc[0]]
-    }
+	loc := chopVersionNumberRegexp.FindStringIndex(s)
+	if loc == nil {
+		return s
+	} else {
+		return s[:loc[0]]
+	}
 }
 
 // label.Parse chokes on hyphenated repo names with
