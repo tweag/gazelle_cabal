@@ -206,6 +206,8 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 	ruleInfos := cabalToRuleInfos(cabalFiles)
 
 	for _, r := range f.Rules {
+		print(r)
+
 		if !r.ShouldKeep() &&
 			isHaskellRule(r.Kind()) &&
 			!hasRuleInfo(ruleInfos, r.Kind(), r.Name()) {
@@ -214,6 +216,7 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 
 		if !r.ShouldKeep() &&
 			r.Kind() == "stack_snapshot" {
+			print("Case accessed")
 			var list []string
 			pack := r.Attr("packages")
 			switch expr := pack.(type) {
