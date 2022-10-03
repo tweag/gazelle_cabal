@@ -408,7 +408,7 @@ func mapSortedStringKeys(m map[string]bool) []string {
 		ss[i] = s
 		i++
 	}
-	listSortedStringKeys(ss)
+	return listSortedStringKeys(ss)
 }
 
 func listSortedStringKeys(ss []string) []string {
@@ -454,7 +454,7 @@ func samePackage(s1 string, s2 string) bool {
 
 // Strips a suffix "-digit+[.digit+]*" from the given string if present.
 // Otherwise returns the string unmodified.
-const chopVersionNumberRegexp regexp.Regexp = regexp.Compile(`-[0-9]+(\.[0-9]+)*$`)
+var chopVersionNumberRegexp, _ = regexp.Compile(`-[0-9]+(\.[0-9]+)*$`)
 
 func chopVersionNumber(s string) string {
 	loc := chopVersionNumberRegexp.FindStringIndex(s)

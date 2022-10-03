@@ -15,6 +15,7 @@ import (
 	"github.com/bazelbuild/bazel-gazelle/repo"
 	"github.com/bazelbuild/bazel-gazelle/resolve"
 	"github.com/bazelbuild/bazel-gazelle/rule"
+	bzl "github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	"os"
@@ -213,7 +214,22 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 
 		if !r.ShouldKeep() &&
 			r.Kind() == "stack_snapshot" {
-			r.Attrs["packages"] = listSortedStringKeys(r.Attrs["packages"])
+			var list []string
+			pack := r.Attr("packages")
+			switch expr := pack.(type) {
+			case *bzl.ListExpr:
+				for _, elem := range expr.List {
+					switch exprElem := elem.(type) {
+					case *bzl.StringExpr:
+						list = append(list, exprElem.Value)
+					default:
+						panic("Elements of packages should be string!")
+					}
+				}
+			default:
+				panic("Packages should be a list!")
+			}
+			r.SetAttr("packages", listSortedStringKeys(list))
 		}
 	}
 }
