@@ -229,6 +229,7 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 			default:
 				panic("Packages should be a list!")
 			}
+			print(list)
 			r.SetAttr("packages", listSortedStringKeys(list))
 		}
 	}
