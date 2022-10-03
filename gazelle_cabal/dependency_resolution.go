@@ -408,6 +408,10 @@ func mapSortedStringKeys(m map[string]bool) []string {
 		ss[i] = s
 		i++
 	}
+	listSortedStringKeys(ss)
+}
+
+func listSortedStringKeys(ss []string) []string {
 	sort.Strings(ss)
 	s_result := removeEquivalent(samePackage, ss)
 	return s_result
@@ -450,14 +454,15 @@ func samePackage(s1 string, s2 string) bool {
 
 // Strips a suffix "-digit+[.digit+]*" from the given string if present.
 // Otherwise returns the string unmodified.
+regexp.Regexp chopVersionNumberRegexp = regexp.Compile(`-[0-9]+(\.[0-9]+)*$`)
+
 func chopVersionNumber(s string) string {
-	l := strings.Split(s, "-")
-	n := len(l)
-	matched, _ := regexp.MatchString(`^[0-9]+(\.[0-9]+)*$`, l[n-1])
-	if matched {
-		return strings.Join(l[:n-1], "-")
-	}
-	return s
+    loc := chopVersionNumberRegexp.FindStringIndex(s)
+    if loc == nil {
+        return s
+    } else {
+        return s[:loc[0]]
+    }
 }
 
 // label.Parse chokes on hyphenated repo names with

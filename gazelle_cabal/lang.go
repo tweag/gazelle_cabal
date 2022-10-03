@@ -80,14 +80,14 @@ var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"ghcopts":        true,
-		"data":           true,
-		"deps":           true,
-		"main_file":      true,
-		"plugins":        true,
-		"srcs":           true,
-		"tools":          true,
-		"version":        true,
+		"ghcopts":   true,
+		"data":      true,
+		"deps":      true,
+		"main_file": true,
+		"plugins":   true,
+		"srcs":      true,
+		"tools":     true,
+		"version":   true,
 	},
 }
 
@@ -130,7 +130,7 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 	case "haskell_library":
 		visibility := r.PrivateAttr("visibility")
 		pkgName := r.PrivateAttr("pkgName")
-	    if visibility == "private" {
+		if visibility == "private" {
 			prefix = fmt.Sprintf("private_library:%s:", pkgName)
 		} else {
 			prefix = fmt.Sprintf("public_library:%s:", pkgName)
@@ -169,7 +169,7 @@ func (*gazelleCabalLang) GenerateRules(args language.GenerateArgs) language.Gene
 
 	generateResult := infoToRules(args.Config.RepoRoot, ruleInfos)
 
-	if (args.File != nil) {
+	if args.File != nil {
 		copyPrivateAttrs(generateResult.Gen, args.File.Rules)
 	}
 
@@ -209,6 +209,11 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 			isHaskellRule(r.Kind()) &&
 			!hasRuleInfo(ruleInfos, r.Kind(), r.Name()) {
 			r.Delete()
+		}
+
+		if !r.ShouldKeep() &&
+			r.Kind() == "stack_snapshot" {
+			r.Attrs["packages"] = listSortedStringKeys(r.Attrs["packages"])
 		}
 	}
 }
