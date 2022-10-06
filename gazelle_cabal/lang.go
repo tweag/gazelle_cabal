@@ -156,6 +156,17 @@ func (*gazelleCabalLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *re
 	setToolsAttribute(ix, toolRepo, r, importData, from)
 }
 
+func RunResolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
+	packageRepo := c.Exts[gazelleCabalName].(Config).HaskellPackageRepo
+	toolRepo := packageRepo + "-exe"
+	importData := imports.(ImportData)
+
+	libraryLabels, unresolvedExtraLibraries := getExtraLibraryLabels(c, importData.ExtraLibraries)
+	setDepsAndPluginsAttributes(libraryLabels, packageRepo, ix, r, importData, from)
+	setCompilerFlagsAttribute(unresolvedExtraLibraries, toolRepo, ix, r, importData, from)
+	setToolsAttribute(ix, toolRepo, r, importData, from)
+}
+
 func (*gazelleCabalLang) GenerateRules(args language.GenerateArgs) language.GenerateResult {
 	// No need to invoke cabalscan if there are no Cabal files here
 	cabalFiles := listFilesWithExtension(args.Dir, ".cabal")
