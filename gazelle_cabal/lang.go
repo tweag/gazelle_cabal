@@ -226,6 +226,7 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 }
 
 func ListOfStringExpr(l bzl.Expr) []string {
+	var list []string
 	switch ty := l.(type) {
 	case *bzl.ListExpr:
 		for _, elem := range ty.List {
@@ -239,6 +240,7 @@ func ListOfStringExpr(l bzl.Expr) []string {
 	default:
 		panic("It should be a list!")
 	}
+	return list
 }
 
 func copyPrivateAttrs(from []*rule.Rule, to []*rule.Rule) {
