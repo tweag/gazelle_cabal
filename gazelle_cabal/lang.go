@@ -15,6 +15,7 @@ import (
 	"github.com/bazelbuild/bazel-gazelle/repo"
 	"github.com/bazelbuild/bazel-gazelle/resolve"
 	"github.com/bazelbuild/bazel-gazelle/rule"
+	bzl "github.com/bazelbuild/buildtools/build"
 	"github.com/bazelbuild/rules_go/go/tools/bazel"
 
 	"os"
@@ -80,14 +81,14 @@ var haskellAttrInfo = rule.KindInfo{
 	MatchAttrs:    []string{},
 	NonEmptyAttrs: map[string]bool{},
 	ResolveAttrs: map[string]bool{
-		"ghcopts":        true,
-		"data":           true,
-		"deps":           true,
-		"main_file":      true,
-		"plugins":        true,
-		"srcs":           true,
-		"tools":          true,
-		"version":        true,
+		"ghcopts":   true,
+		"data":      true,
+		"deps":      true,
+		"main_file": true,
+		"plugins":   true,
+		"srcs":      true,
+		"tools":     true,
+		"version":   true,
 	},
 }
 
@@ -130,7 +131,7 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 	case "haskell_library":
 		visibility := r.PrivateAttr("visibility")
 		pkgName := r.PrivateAttr("pkgName")
-	    if visibility == "private" {
+		if visibility == "private" {
 			prefix = fmt.Sprintf("private_library:%s:", pkgName)
 		} else {
 			prefix = fmt.Sprintf("public_library:%s:", pkgName)
@@ -145,6 +146,12 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 func (*gazelleCabalLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
 
 func (*gazelleCabalLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
+	RunResolve(c, ix, rc, r, imports, from)
+}
+
+// To be used by external extensions (namely gazelle_haskell_modules),
+// Resolve has to be a function rather than a method.
+func RunResolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
 	packageRepo := c.Exts[gazelleCabalName].(Config).HaskellPackageRepo
 	toolRepo := packageRepo + "-exe"
 	importData := imports.(ImportData)
@@ -169,7 +176,7 @@ func (*gazelleCabalLang) GenerateRules(args language.GenerateArgs) language.Gene
 
 	generateResult := infoToRules(args.Config.RepoRoot, ruleInfos)
 
-	if (args.File != nil) {
+	if args.File != nil {
 		copyPrivateAttrs(generateResult.Gen, args.File.Rules)
 	}
 
@@ -211,6 +218,24 @@ func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
 			r.Delete()
 		}
 	}
+}
+
+func ListOfStringExpr(l bzl.Expr) []string {
+	var list []string
+	switch ty := l.(type) {
+	case *bzl.ListExpr:
+		for _, elem := range ty.List {
+			switch tyElem := elem.(type) {
+			case *bzl.StringExpr:
+				list = append(list, tyElem.Value)
+			default:
+				panic("Elements should be string!")
+			}
+		}
+	default:
+		panic("It should be a list!")
+	}
+	return list
 }
 
 func copyPrivateAttrs(from []*rule.Rule, to []*rule.Rule) {
