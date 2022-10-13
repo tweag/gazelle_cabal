@@ -122,6 +122,10 @@ func (*gazelleCabalLang) Loads() []rule.LoadInfo {
 }
 
 func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
+	return RunImports(r, gazelleCabalName)
+}
+
+func RunImports(r *rule.Rule, lang string) []resolve.ImportSpec {
 	var prefix string
 	switch r.Kind() {
 	case "ghc_plugin":
@@ -140,24 +144,25 @@ func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) [
 		prefix = "test:"
 	}
 
-	return []resolve.ImportSpec{{gazelleCabalName, prefix + r.Name()}}
+	return []resolve.ImportSpec{{lang, prefix + r.Name()}}
 }
 
 func (*gazelleCabalLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
 
 func (*gazelleCabalLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
-	RunResolve(c, ix, rc, r, imports, from)
+	RunResolve(c, ix, r, imports, from, gazelleCabalName)
 }
 
 // To be used by external extensions (namely gazelle_haskell_modules),
 // Resolve has to be a function rather than a method.
-func RunResolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
+func RunResolve(c *config.Config, ix *resolve.RuleIndex, r *rule.Rule, imports interface{}, from label.Label, lang string) {
 	packageRepo := c.Exts[gazelleCabalName].(Config).HaskellPackageRepo
 	toolRepo := packageRepo + "-exe"
 	importData := imports.(ImportData)
 
 	libraryLabels, unresolvedExtraLibraries := getExtraLibraryLabels(c, importData.ExtraLibraries)
-	setDepsAndPluginsAttributes(libraryLabels, packageRepo, ix, r, importData, from)
+
+	setDepsAndPluginsAttributes(libraryLabels, packageRepo, ix, r, importData, from, lang)
 	setCompilerFlagsAttribute(unresolvedExtraLibraries, toolRepo, ix, r, importData, from)
 	setToolsAttribute(ix, toolRepo, r, importData, from)
 }

@@ -155,12 +155,13 @@ func rel(lbl label.Label, from label.Label) label.Label {
 // haskell_library are assumed to be local. There rest of the
 // dependencies are assumed to come from packageRepo.
 func setDepsAndPluginsAttributes(
-    extraLibraries []label.Label,
+	extraLibraries []label.Label,
 	packageRepo string,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
 	importData ImportData,
 	from label.Label,
+	lang string,
 ) {
 	deps := make([]string, 0, len(importData.Deps)+len(extraLibraries))
 	plugins := make([]string, 0, len(importData.Deps))
@@ -169,7 +170,7 @@ func setDepsAndPluginsAttributes(
 		if err == nil {
 			plugins = append(plugins, plugin.String())
 		} else {
-			haskellPkg := getPackageLabel(r, ix, packageRepo, depName, from)
+			haskellPkg := getPackageLabel(r, ix, packageRepo, depName, from, lang)
 			deps = append(deps, haskellPkg.String())
 		}
 	}
@@ -220,11 +221,12 @@ func getPackageLabel(
 	packageRepo string,
 	pkgName string,
 	from label.Label,
+	lang string,
 ) label.Label {
 
 	cabalPkgName := r.PrivateAttr("pkgName").(string)
 	for _, searchScope := range getRuleIndexKeys(pkgName, from, cabalPkgName) {
-		if labelFound, err := searchInLibraries(ix, packageRepo, pkgName, from, searchScope); err == nil {
+		if labelFound, err := searchInLibraries(ix, packageRepo, pkgName, from, searchScope, lang); err == nil {
 			return labelFound
 		}
 	}
@@ -253,7 +255,7 @@ func getRuleIndexKeys(depName string, from label.Label, cabalPkgName string) []s
 	// colon prefix detected
 	packagePrefix := splitted[0]
 	libraryName := splitted[1]
-	if (packagePrefix == cabalPkgName) {
+	if packagePrefix == cabalPkgName {
 		// the package prefix leads to a sub-library of the same package
 		return []string{
 			fmt.Sprintf(format, privatePrefix, packagePrefix, libraryName),
@@ -273,9 +275,10 @@ func searchInLibraries(
 	pkgName string,
 	from label.Label,
 	importId string,
+	lang string,
 ) (label.Label, error) {
-	spec := resolve.ImportSpec{gazelleCabalName, importId}
-	res := ix.FindRulesByImport(spec, gazelleCabalName)
+	spec := resolve.ImportSpec{lang, importId}
+	res := ix.FindRulesByImport(spec, lang)
 
 	librariesFound := len(res)
 	if librariesFound > 1 {
