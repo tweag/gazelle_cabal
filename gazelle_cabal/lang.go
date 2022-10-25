@@ -113,6 +113,7 @@ func (*gazelleCabalLang) Kinds() map[string]rule.KindInfo {
 }
 
 func (*gazelleCabalLang) Loads() []rule.LoadInfo {
+	fmt.Printf("CABAL Loads\n")
 	return []rule.LoadInfo{
 		{
 			Name:    "@rules_haskell//haskell:defs.bzl",
@@ -122,6 +123,7 @@ func (*gazelleCabalLang) Loads() []rule.LoadInfo {
 }
 
 func (*gazelleCabalLang) Imports(c *config.Config, r *rule.Rule, f *rule.File) []resolve.ImportSpec {
+	fmt.Printf("CABAL Imports\n")
 	return RunImports(r, gazelleCabalName)
 }
 
@@ -147,9 +149,13 @@ func RunImports(r *rule.Rule, lang string) []resolve.ImportSpec {
 	return []resolve.ImportSpec{{lang, prefix + r.Name()}}
 }
 
-func (*gazelleCabalLang) Embeds(r *rule.Rule, from label.Label) []label.Label { return nil }
+func (*gazelleCabalLang) Embeds(r *rule.Rule, from label.Label) []label.Label {
+	fmt.Printf("CABAL Embeds\n")
+	return nil
+}
 
 func (*gazelleCabalLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *repo.RemoteCache, r *rule.Rule, imports interface{}, from label.Label) {
+	fmt.Printf("CABAL Resolve\n")
 	RunResolve(c, ix, r, imports, from, gazelleCabalName)
 }
 
@@ -168,6 +174,7 @@ func RunResolve(c *config.Config, ix *resolve.RuleIndex, r *rule.Rule, imports i
 }
 
 func (*gazelleCabalLang) GenerateRules(args language.GenerateArgs) language.GenerateResult {
+	fmt.Printf("CABAL GenerateRules\n")
 	// No need to invoke cabalscan if there are no Cabal files here
 	cabalFiles := listFilesWithExtension(args.Dir, ".cabal")
 	if len(cabalFiles) == 0 {
@@ -191,6 +198,7 @@ func (*gazelleCabalLang) GenerateRules(args language.GenerateArgs) language.Gene
 }
 
 func (lang *gazelleCabalLang) UpdateRepos(args language.UpdateReposArgs) language.UpdateReposResult {
+	fmt.Printf("CABAL UpdateRepos\n")
 	packageList, components := collectDependenciesFromRepo(args.Config, lang)
 
 	packageRepo := args.Config.Exts[gazelleCabalName].(Config).HaskellPackageRepo
@@ -206,6 +214,7 @@ func (lang *gazelleCabalLang) UpdateRepos(args language.UpdateReposArgs) languag
 }
 
 func (*gazelleCabalLang) Fix(c *config.Config, f *rule.File) {
+	fmt.Printf("CABAL Fix\n")
 	if !c.ShouldFix {
 		return
 	}
