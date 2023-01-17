@@ -2,6 +2,7 @@
 
 ![Build status](https://github.com/tweag/gazelle_cabal/actions/workflows/workflow.yaml/badge.svg?branch=main)
 
+
 This is a [gazelle][gazelle] extension that generates and
 updates [Haskell rules][rules_haskell] for [Bazel][bazel]
 from [Cabal][cabal] files.
