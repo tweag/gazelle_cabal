@@ -13,9 +13,9 @@ local_repository(
 
 http_archive(
     name = "rules_haskell",
-    sha256 = "a8e029b9ebf2e8fd79f99134acefd99310f9427951b5260ce4c3cae88da57f1e",
-    strip_prefix = "rules_haskell-97220908a5950cb56638b893a384bd92a19188e2",
-    urls = ["https://github.com/tweag/rules_haskell/archive/97220908a5950cb56638b893a384bd92a19188e2.zip"],
+    sha256 = "33b9b012172ae530ba1591be0832a77cfe063062be90311b94720e73264c09da",
+    strip_prefix = "rules_haskell-8140a709a2fce93dcdaca44a65bb98399b30798a",
+    urls = ["https://github.com/tweag/rules_haskell/archive/8140a709a2fce93dcdaca44a65bb98399b30798a.zip"],
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
@@ -89,10 +89,10 @@ haskell_register_ghc_nixpkgs(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "f2dcd210c7095febe54b804bb1cd3a58fe8435a909db2ec04e31542631cf715c",
+    sha256 = "6dc2da7ab4cf5d7bfc7c949776b1b7c733f05e56edc4bcd9022bb249d2e2a996",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.31.0/rules_go-v0.31.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.31.0/rules_go-v0.31.0.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.39.1/rules_go-v0.39.1.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.31.0/rules_go-v0.39.1.zip",
     ],
 )
 
