@@ -31,9 +31,13 @@ import qualified Cabal.Cabal_8_10 as Cabal
 
 import qualified Cabal.Cabal_9_0 as Cabal
 
-#else
+#elif __GLASGOW_HASKELL__ == 902
 
 import qualified Cabal.Cabal_9_2 as Cabal
+
+#else
+
+import qualified Cabal.Cabal_9_4 as Cabal
 
 #endif
 
