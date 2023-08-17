@@ -65,7 +65,13 @@ stack_snapshot(
         "tasty-discover",
         "tasty-hspec",
         "temporary",
-    ],
+    ] +
+    # downgrade logict from 0.7.1.0 for GHC 8.10 and 9.0 which is not resolvable
+    # from hackage in the latest revision (see https://github.com/Bodigrim/logict/issues/20)
+    (["logict-0.7.0.3"] if ghc_version in [
+        "8.10.7",
+        "9.0.2",
+    ] else []),
     setup_deps = {
         "call-stack": ["@stackage//:Cabal"],
         "hspec": ["@stackage//:Cabal"],
