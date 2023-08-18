@@ -83,6 +83,7 @@ stack_snapshot(
         "tasty-discover": ["@stackage//:Cabal"],
         "transformers-compat": ["@stackage//:Cabal"],
     },
+    stack_snapshot_json = "//:snapshot-" + ghc_version + ".json",
 )
 
 load("@rules_haskell//haskell:nixpkgs.bzl", "haskell_register_ghc_nixpkgs")
