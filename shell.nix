@@ -16,6 +16,7 @@ mkShell {
     git
     openjdk11
     python3
+    stack
     # convenience dependencies
     less
   ];
