@@ -5,17 +5,127 @@ module(
 
 bazel_dep(name = "rules_haskell")
 
-stack_snapshots = use_extension(
+stack_snapshot = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
     "stack_snapshot",
 )
-use_repo(stack_snapshots, "stackage")
-stack_snapshots.package(name = "directory")
-stack_snapshots.package(name = "filepath")
-stack_snapshots.package(name = "json")
+use_repo(stack_snapshot, "stackage", "stackage-exe")
+stack_snapshot.package(name = "directory")
+stack_snapshot.package(name = "filepath")
+stack_snapshot.package(name = "json")
 
 non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
 use_repo(non_module_deps, "io_tweag_gazelle_cabal_deps")
 
 bazel_dep(name = "rules_go", version = "0.41.0", repo_name = "io_bazel_rules_go")
 bazel_dep(name = "gazelle", version = "0.33.0", repo_name = "bazel_gazelle")
+
+bazel_dep(name = "bazel_skylib", version = "1.4.2", dev_dependency = True)
+bazel_dep(name = "rules_haskell_nix", dev_dependency = True)
+bazel_dep(name = "rules_nixpkgs_core", dev_dependency = True)
+
+stack_snapshot_dev = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+    dev_dependency = True,
+)
+stack_snapshot_dev.package(name = "hspec")
+stack_snapshot_dev.package(name = "tasty")
+stack_snapshot_dev.package(name = "tasty-hspec")
+stack_snapshot_dev.package(
+    name = "tasty-discover",
+    components = [
+        "lib",
+        "exe:tasty-discover",
+    ],
+)
+stack_snapshot_dev.package(name = "temporary")
+
+# TODO replace this once a proper public interface for Nix provided Haskell toolchains exists.
+nix_haskell_toolchains = use_extension(
+    "@rules_haskell_nix//extensions:nix_haskell_toolchains.bzl",
+    "nix_haskell_toolchains",
+    dev_dependency = True,
+)
+
+GHC_VERSION = "9.4.5"
+nix_haskell_toolchains.new(
+    attribute_path = "haskell.compiler.ghc" + GHC_VERSION.replace(".", ""),
+    repository = "@nixpkgs",
+    version = GHC_VERSION,
+)
+use_repo(
+    nix_haskell_toolchains,
+    "nix_haskell_toolchains_configurations",
+    # TODO register via rules_nixpkgs_posix once supported.
+    "all_posix_toolchains",
+)
+
+# TODO remove this once a proper public interface for Nix provided Haskell toolchain exists.
+declare_nix_toolchains = use_extension(
+    "@rules_haskell_nix//private:declare_toolchains.bzl",
+    "declare_nix_toolchains",
+    dev_dependency = True,
+)
+use_repo(
+    declare_nix_toolchains,
+    "all_nix_toolchains",
+)
+
+register_toolchains(
+    "@all_nix_toolchains//:all",
+    "@all_posix_toolchains//:all",
+    dev_dependency = True,
+)
+
+# TODO Remove once rules_haskell is in the BCR.
+RULES_HASKELL_REV = "155ba21c7d315cc421ee3f17a1c09b758cc7279d"
+RULES_HASKELL_INTEGRITY = "sha384-dIsFufYml0KGSUiC6jhY9ClMv/yEW1kGof7fLahSwfbWd28jLiwMGBGUuoOsQwWf"
+archive_override(
+    module_name = "rules_haskell",
+    urls = ["https://github.com/tweag/rules_haskell/archive/%s.tar.gz" % RULES_HASKELL_REV],
+    strip_prefix = "rules_haskell-%s" % RULES_HASKELL_REV,
+    integrity = RULES_HASKELL_INTEGRITY,
+)
+archive_override(
+    module_name = "rules_haskell_nix",
+    urls = ["https://github.com/tweag/rules_haskell/archive/%s.tar.gz" % RULES_HASKELL_REV],
+    strip_prefix = "rules_haskell-%s/rules_haskell_nix" % RULES_HASKELL_REV,
+    integrity = RULES_HASKELL_INTEGRITY,
+)
+
+# TODO Remove once rules_nixpkgs is in the BCR.
+RULES_NIXPKGS_REV = "7e627d76ba65d6c42586fc265e46bd370672b4eb"
+RULES_NIXPKGS_INTEGRITY = "sha384-N2bS5BvSk8QMjhmuxdeeve9PBJUTwFOHufMV4sDgaviwXNdCGc7JaJPqwqZV1TbC"
+archive_override(
+    module_name = "rules_nixpkgs_core",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % RULES_NIXPKGS_REV],
+    strip_prefix = "rules_nixpkgs-%s/core" % RULES_NIXPKGS_REV,
+    integrity = RULES_NIXPKGS_INTEGRITY,
+)
+archive_override(
+    module_name = "rules_nixpkgs_cc",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % RULES_NIXPKGS_REV],
+    strip_prefix = "rules_nixpkgs-%s/toolchains/cc" % RULES_NIXPKGS_REV,
+    integrity = RULES_NIXPKGS_INTEGRITY,
+)
+archive_override(
+    module_name = "rules_nixpkgs_posix",
+    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % RULES_NIXPKGS_REV],
+    strip_prefix = "rules_nixpkgs-%s/toolchains/posix" % RULES_NIXPKGS_REV,
+    integrity = RULES_NIXPKGS_INTEGRITY,
+)
+
+# Needed for custom toolchain definitions in non_module_deps.
+# TODO update once a bzlmod API for Nix provided toolchains exists.
+bazel_dep(name = "rules_nixpkgs_cc", dev_dependency = True)
+bazel_dep(name = "rules_nixpkgs_posix", dev_dependency = True)
+bazel_dep(name = "platforms", version = "0.0.7", dev_dependency = True)
+bazel_dep(name = "rules_cc", version = "0.0.9", dev_dependency = True)
+
+non_module_dev_deps = use_extension("//:non_module_dev_deps.bzl", "non_module_dev_deps", dev_dependency = True)
+use_repo(non_module_dev_deps, "nixpkgs")
+use_repo(non_module_dev_deps, "nixpkgs_config_cc")
+use_repo(non_module_dev_deps, "nixpkgs_config_cc_info")
+use_repo(non_module_dev_deps, "nixpkgs_config_cc_toolchains")
+register_toolchains("@nixpkgs_config_cc_toolchains//:all", dev_dependency = True)
