@@ -5,6 +5,15 @@ module(
 
 bazel_dep(name = "rules_haskell")
 
+stack_snapshots = use_extension(
+    "@rules_haskell//extensions:stack_snapshot.bzl",
+    "stack_snapshot",
+)
+use_repo(stack_snapshots, "stackage")
+stack_snapshots.package(name = "directory")
+stack_snapshots.package(name = "filepath")
+stack_snapshots.package(name = "json")
+
 non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
 use_repo(non_module_deps, "io_tweag_gazelle_cabal_deps")
 
