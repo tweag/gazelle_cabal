@@ -7,7 +7,7 @@ load(
 load("@rules_haskell//haskell:defs.bzl", "ghc_plugin")
 
 # gazelle:resolve gazelle_cabal z @zlib.dev//:zlib
-# gazelle:cabal_haskell_package_repo stackage-b
+# gazelle:cabal_haskell_package_repo stackage_b
 gazelle(
     name = "gazelle",
     gazelle = ":gazelle_binary",
@@ -24,7 +24,7 @@ gazelle(
     extra_args = [
         "-lang",
         "gazelle_cabal",
-        "stackage-b",
+        "stackage_b",
     ],
     gazelle = ":gazelle_binary",
 )
@@ -33,5 +33,5 @@ ghc_plugin(
     name = "inspection-testing-plugin",
     module = "Test.Inspection.Plugin",
     visibility = ["//:__subpackages__"],
-    deps = ["@stackage-b//:inspection-testing"],
+    deps = ["@stackage_b//:inspection-testing"],
 )

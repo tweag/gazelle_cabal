@@ -47,9 +47,9 @@ load("@config_settings//:info.bzl", "ghc_version")
 load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
 
 gazelle_cabal_dependencies(
-    directory = "@stackage-b//:directory",
-    filepath = "@stackage-b//:filepath",
-    json = "@stackage-b//:json",
+    directory = "@stackage_b//:directory",
+    filepath = "@stackage_b//:filepath",
+    json = "@stackage_b//:json",
 )
 
 stack_snapshot(
@@ -61,7 +61,7 @@ stack_snapshot(
 )
 
 stack_snapshot(
-    name = "stackage-b",
+    name = "stackage_b",
     local_snapshot = "@io_tweag_gazelle_cabal//:snapshot-" + ghc_version + ".yaml",
     packages = [
         "directory",  #keep
