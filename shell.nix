@@ -9,13 +9,14 @@ mkShell {
   # See: https://github.com/bazelbuild/bazel/issues/4231
   BAZEL_USE_CPP_ONLY_TOOLCHAIN=1;
   buildInputs = [
-    bazel_5
+    bazel_6
     binutils
     cacert
     nix
     git
     openjdk11
     python3
+    stack
     # convenience dependencies
     less
   ];
