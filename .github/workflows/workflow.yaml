@@ -39,7 +39,7 @@ jobs:
           fi
 
           cat >.bazelrc.local <<EOF
-          build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host
+          build --host_platform=@rules_nixpkgs_core//platforms:host
           build --bes_results_url=https://app.buildbuddy.io/invocation/
           build --bes_backend=grpcs://cloud.buildbuddy.io
           build --remote_cache=grpcs://cloud.buildbuddy.io
