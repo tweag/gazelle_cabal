@@ -39,7 +39,7 @@ load("//:config_settings/setup.bzl", "config_settings")
 config_settings(name = "config_settings")
 
 load("@config_settings//:info.bzl", "ghc_version")
-load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
+load("//:defs.bzl", "gazelle_cabal_dependencies")
 
 gazelle_cabal_dependencies()
 
