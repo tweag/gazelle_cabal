@@ -13,9 +13,9 @@ local_repository(
 
 http_archive(
     name = "rules_haskell",
-    sha256 = "441c45778bf469a36c7b9457c962579408ec47f9c5883c8001e9412d6c801f08",
-    strip_prefix = "rules_haskell-1bd3c46ee88c8c4ff729959de56cc2ca9bf1cf89",
-    urls = ["https://github.com/tweag/rules_haskell/archive/1bd3c46ee88c8c4ff729959de56cc2ca9bf1cf89.zip"],
+    sha256 = "1485a90366039fe8ea5051732dc50827d8c1e9bb6feb2c8bb1ad1fed5344cff0",
+    strip_prefix = "rules_haskell-155ba21c7d315cc421ee3f17a1c09b758cc7279d",
+    urls = ["https://github.com/tweag/rules_haskell/archive/155ba21c7d315cc421ee3f17a1c09b758cc7279d.tar.gz"],
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
