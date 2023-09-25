@@ -6,4 +6,6 @@ common:ghc_9_2_7 --repo_env=GHC_VERSION=9.2.7
 
 common:ghc_9_4_5 --repo_env=GHC_VERSION=9.4.5
 
+common:bzlmod --enable_bzlmod
+
 try-import .bazelrc.local
