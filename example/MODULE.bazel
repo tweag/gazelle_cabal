@@ -30,7 +30,13 @@ stack_snapshots.package(name = "base")
 stack_snapshots.package(name = "inspection-testing")
 stack_snapshots.package(name = "mtl")
 stack_snapshots.package(name = "tasty")
-stack_snapshots.package(name = "tasty-discover")
+stack_snapshots.package(
+    name = "tasty-discover",
+    components = [
+        "lib",
+        "exe:tasty-discover",
+    ],
+)
 stack_snapshots.package(name = "tasty-hunit")
 stack_snapshots.package(name = "text")
 stack_snapshots.package(name = "void")
