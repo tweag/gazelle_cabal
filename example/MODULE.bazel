@@ -66,8 +66,8 @@ register_toolchains(
 )
 
 # TODO Remove once rules_haskell is in the BCR.
-RULES_HASKELL_REV = "155ba21c7d315cc421ee3f17a1c09b758cc7279d"
-RULES_HASKELL_INTEGRITY = "sha384-dIsFufYml0KGSUiC6jhY9ClMv/yEW1kGof7fLahSwfbWd28jLiwMGBGUuoOsQwWf"
+RULES_HASKELL_REV = "d644fe67ff53ee0fd921806a4ad6027c15936c31"
+RULES_HASKELL_INTEGRITY = "sha384-BbQWq9BprVpBDQYnrbyldWOO/cfcxLUnjIsNTg9SeJMFDjOGKA0nm/4xwovzGS6o"
 archive_override(
     module_name = "rules_haskell",
     urls = ["https://github.com/tweag/rules_haskell/archive/%s.tar.gz" % RULES_HASKELL_REV],
