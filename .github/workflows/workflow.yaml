@@ -17,6 +17,11 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         ghc-version: [ghc_8_10_7, ghc_9_0_2, ghc_9_2_7, ghc_9_4_5]
+        enable-bzlmod: [false]
+        include:
+          - os: ubuntu-latest
+            ghc-version: ghc_9_4_5
+            enable-bzlmod: true
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +43,11 @@ jobs:
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
 
+          bzlmod_setting=
+          if [[ ${{ matrix.enable-bzlmod }} = true ]]; then
+            bzlmod_setting="common --config=bzlmod"
+          fi
+
           cat >.bazelrc.local <<EOF
           build --host_platform=@rules_nixpkgs_core//platforms:host
           build --bes_results_url=https://app.buildbuddy.io/invocation/
@@ -47,11 +57,13 @@ jobs:
           build --remote_timeout=600
           build --keep_backend_build_event_connections_alive=false
           build --repository_cache=~/repo-cache/
+          $bzlmod_setting
           EOF
           ln -s ../.bazelrc.local example/.bazelrc.local
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
       - name: Build & test
         run: nix-shell --pure --run 'bazel test --config=${{ matrix.ghc-version }} --test_output=all //...'
+        if: ${{ !matrix.enable-bzlmod }}
       - name: Test the example
         run: |
           cd example
@@ -113,5 +125,7 @@ jobs:
           nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}'
           nix-shell --pure --run 'bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}'
           nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
+        if: ${{ !matrix.enable-bzlmod }}
       - name: Test for buildifier suggestions
         run: nix-shell --pure --run 'bazel run //:buildifier-diff'
+        if: ${{ !matrix.enable-bzlmod }}
