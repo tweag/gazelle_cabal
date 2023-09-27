@@ -20,6 +20,9 @@ jobs:
         enable-bzlmod: [false]
         include:
           - os: ubuntu-latest
+            ghc-version: ghc_9_2_7
+            enable-bzlmod: true
+          - os: ubuntu-latest
             ghc-version: ghc_9_4_5
             enable-bzlmod: true
     runs-on: ${{ matrix.os }}
