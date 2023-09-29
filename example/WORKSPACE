@@ -22,17 +22,14 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_local_repository",
-    "nixpkgs_package",
-    "nixpkgs_python_configure",
-)
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_local_repository")
 
 nixpkgs_local_repository(
     name = "nixpkgs",
     nix_file = "//:nixpkgs.nix",
 )
+
+load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
 
 nixpkgs_python_configure(repository = "@nixpkgs")
 
@@ -96,10 +93,7 @@ http_archive(
     ],
 )
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
-    "nixpkgs_go_configure",
-)
+load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 
 nixpkgs_go_configure(repository = "@nixpkgs")
 
@@ -135,6 +129,8 @@ gazelle_dependencies()
 ####################
 # zlib
 ####################
+
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_package")
 
 nixpkgs_package(
     name = "nixpkgs_zlib",

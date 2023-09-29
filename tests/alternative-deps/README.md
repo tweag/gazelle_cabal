@@ -3,7 +3,7 @@ It tests using other repository names than `stackage` from which to get dependen
 
 Run the following to generate the build configuration from the Cabal files.
 ```bazel
-echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" > .bazelrc.local
+echo "build --host_platform=@rules_nixpkgs_core//platforms:host" > .bazelrc.local
 nix-shell --pure --run "bazel run //:gazelle"
 nix-shell --pure --run "bazel run //:gazelle-update-repos"
 ```

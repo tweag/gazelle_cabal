@@ -216,14 +216,13 @@ configuration with default flag values.
 ## Hacking on gazelle_cabal with nix
 
 If you are running NixOS or if you want to provision `ghc` and other dependencies using `nix`,
-you'll need to set the `host_platform` config option to `@io_tweag_rules_nixpkgs//nixpkgs/platforms:host`:
+you'll need to set the `host_platform` config option to `@rules_nixpkgs_core//platforms:host`:
 ```sh
-> bazel build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host ...
+> bazel build --host_platform=@rules_nixpkgs_core//platforms:host ...
 ```
 For ease of use, we recommend setting this in your `.bazelrc.local` file:
 ```sh
-echo "build --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" >> .bazelrc.local
-echo "run --host_platform=@io_tweag_rules_nixpkgs//nixpkgs/platforms:host" >> .bazelrc.local
+echo "build --host_platform=@rules_nixpkgs_core//platforms:host" >> .bazelrc.local
 ```
 
 ## Sponsors

@@ -17,16 +17,14 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:nixpkgs.bzl",
-    "nixpkgs_local_repository",
-    "nixpkgs_python_configure",
-)
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_local_repository")
 
 nixpkgs_local_repository(
     name = "nixpkgs",
     nix_file = "//:nixpkgs.nix",
 )
+
+load("@rules_nixpkgs_python//:python.bzl", "nixpkgs_python_configure")
 
 nixpkgs_python_configure(repository = "@nixpkgs")
 
@@ -41,7 +39,7 @@ load("//:config_settings/setup.bzl", "config_settings")
 config_settings(name = "config_settings")
 
 load("@config_settings//:info.bzl", "ghc_version")
-load("@io_tweag_gazelle_cabal//:defs.bzl", "gazelle_cabal_dependencies")
+load("//:defs.bzl", "gazelle_cabal_dependencies")
 
 gazelle_cabal_dependencies()
 
@@ -115,10 +113,7 @@ http_archive(
     ],
 )
 
-load(
-    "@io_tweag_rules_nixpkgs//nixpkgs:toolchains/go.bzl",
-    "nixpkgs_go_configure",
-)
+load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 
 nixpkgs_go_configure(repository = "@nixpkgs")
 
