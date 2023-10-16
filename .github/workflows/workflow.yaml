@@ -20,6 +20,9 @@ jobs:
         enable-bzlmod: [false]
         include:
           - os: ubuntu-latest
+            ghc-version: ghc_9_2_7
+            enable-bzlmod: true
+          - os: ubuntu-latest
             ghc-version: ghc_9_4_5
             enable-bzlmod: true
     runs-on: ${{ matrix.os }}
@@ -43,9 +46,14 @@ jobs:
               cache_setting="--remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY"
           fi
 
+          # Convert "ghc_X_Y_Z" to "X.Y.Z".
+          GHC_VERSION="$(sed 's/^ghc_//;s/_/./g' <<<"${{ matrix.ghc-version }}")"
+
           bzlmod_setting=
           if [[ ${{ matrix.enable-bzlmod }} = true ]]; then
             bzlmod_setting="common --config=bzlmod"
+            # Update the GHC_VERSION in MODULE.bazel
+            sed -i.bak 's/^GHC_VERSION = .*$/GHC_VERSION = "'"$GHC_VERSION"'"/g' example/MODULE.bazel
           fi
 
           cat >.bazelrc.local <<EOF
