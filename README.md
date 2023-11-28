@@ -1,6 +1,6 @@
 # gazelle\_cabal
 
-![Build status](https://github.com/tweag/gazelle_cabal/actions/workflows/workflow.yaml/badge.svg?branch=main)
+[![Continuous Integration](https://github.com/tweag/gazelle_cabal/actions/workflows/workflow.yaml/badge.svg?event=schedule)](https://github.com/tweag/gazelle_cabal/actions/workflows/workflow.yaml)
 
 
 This is a [gazelle][gazelle] extension that generates and
