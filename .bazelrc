@@ -1,3 +1,14 @@
+# Remote Cache Configuration
+build:remote-cache --bes_results_url=https://app.buildbuddy.io/invocation/
+build:remote-cache --bes_backend=grpcs://remote.buildbuddy.io
+build:remote-cache --remote_cache=grpcs://remote.buildbuddy.io
+build:remote-cache --remote_timeout=3600
+# Avoid failures of the form `deadline exceeded after 14999958197ns DEADLINE_EXCEEDED`.
+# See https://github.com/tweag/rules_haskell/issues/1498.
+build:remote-cache --keep_backend_build_event_connections_alive=false
+# All clients except CI should be configured as read-only
+build:remote-cache --noremote_upload_local_results
+
 common:ghc_8_10_7 --repo_env=GHC_VERSION=8.10.7
 
 common:ghc_9_0_2 --repo_env=GHC_VERSION=9.0.2
@@ -8,4 +19,8 @@ common:ghc_9_4_5 --repo_env=GHC_VERSION=9.4.5
 
 common:bzlmod --enable_bzlmod
 
-try-import .bazelrc.local
+# Try to load a file that includes the remote cache authentication flag
+try-import %workspace%/.bazelrc.auth
+
+# Try to load any configuration that is specific for this host
+try-import %workspace%/.bazelrc.local
