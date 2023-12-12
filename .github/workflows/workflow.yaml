@@ -11,6 +11,10 @@ env:
   # Bump this number to invalidate the GH actions cache
   cache-version: 0
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   test-nixpkgs:
     name: Build & Test - Nixpkgs
@@ -130,3 +134,13 @@ jobs:
       - name: Test for buildifier suggestions
         run: nix-shell --pure --run 'bazel run //:buildifier-diff'
         if: ${{ !matrix.enable-bzlmod }}
+
+  all_ci_tests:
+    runs-on: ubuntu-latest
+    needs:
+      - test-nixpkgs
+    if: ${{ always() }}
+    steps:
+      - uses: cgrindel/gha_join_jobs@794a2d117251f22607f1aab937d3fd3eaaf9a2f5 # v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
