@@ -67,8 +67,10 @@ jobs:
           ln -s ../.bazelrc.local example/.bazelrc.local
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
       - name: Build & test
-        run: nix-shell --pure --run 'bazel test --config=${{ matrix.ghc-version }} --test_output=all //...'
         if: ${{ !matrix.enable-bzlmod }}
+        uses: tweag/run-nix-shell@v0
+        with:
+          run: bazel test --config=${{ matrix.ghc-version }} --test_output=all //...
       - name: Test the example
         run: |
           cd example
@@ -125,15 +127,19 @@ jobs:
           nix-shell --pure --run 'bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}'
           nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
       - name: Test alternative dependencies
-        run: |
-          cd tests/alternative-deps
-          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}'
-          nix-shell --pure --run 'bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}'
-          nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
         if: ${{ !matrix.enable-bzlmod }}
+        uses: tweag/run-nix-shell@v0
+        with:
+          working-directory: tests/alternative-deps
+          run: |
+            bazel run //:gazelle --config=${{ matrix.ghc-version }}
+            bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}
+            bazel test //... --config=${{ matrix.ghc-version }}
       - name: Test for buildifier suggestions
-        run: nix-shell --pure --run 'bazel run //:buildifier-diff'
         if: ${{ !matrix.enable-bzlmod }}
+        uses: tweag/run-nix-shell@v0
+        with:
+          run: bazel run //:buildifier-diff
 
   all_ci_tests:
     runs-on: ubuntu-latest
