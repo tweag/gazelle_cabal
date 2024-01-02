@@ -1,6 +1,6 @@
 {-#LANGUAGE CPP #-}
 
-#if __GLASGOW_HASKELL__ == 904
+#if __GLASGOW_HASKELL__ >= 904
 
 module Cabal.Cabal_9_4(module Cabal, depLibraries, hsSourceDirs)
 

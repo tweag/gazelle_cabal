@@ -35,13 +35,13 @@ import qualified Cabal.Cabal_9_0 as Cabal
 
 import qualified Cabal.Cabal_9_2 as Cabal
 
-#elif __GLASGOW_HASKELL__ == 904
+#elif __GLASGOW_HASKELL__ >= 904
 
 import qualified Cabal.Cabal_9_4 as Cabal
 
 #else
 
-import qualified Cabal.Cabal_9_6 as Cabal
+#error GHC version __GLASGOW_HASKELL__ not supported
 
 #endif
 
