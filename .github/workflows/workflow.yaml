@@ -22,7 +22,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc-version: [ghc_8_10_7, ghc_9_0_2, ghc_9_2_7, ghc_9_4_5]
+        ghc-version: [ghc_8_10_7, ghc_9_0_2, ghc_9_2_7, ghc_9_4_5, ghc_9_6_2]
         enable-bzlmod: [false]
         include:
           - os: ubuntu-latest
@@ -30,6 +30,9 @@ jobs:
             enable-bzlmod: true
           - os: ubuntu-latest
             ghc-version: ghc_9_4_5
+            enable-bzlmod: true
+          - os: ubuntu-latest
+            ghc-version: ghc_9_6_2
             enable-bzlmod: true
     runs-on: ${{ matrix.os }}
     steps:
