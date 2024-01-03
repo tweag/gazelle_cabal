@@ -3,7 +3,7 @@ module(
     version = "0.0.0",
 )
 
-bazel_dep(name = "rules_haskell")
+bazel_dep(name = "rules_haskell", version = "0.18")
 
 stack_snapshot = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",

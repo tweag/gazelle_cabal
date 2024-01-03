@@ -3,7 +3,7 @@ module(name = "gazelle_cabal_example")
 bazel_dep(name = "gazelle_cabal", repo_name = "io_tweag_gazelle_cabal")
 local_path_override(module_name = "gazelle_cabal", path = "..")
 
-bazel_dep(name = "rules_haskell")
+bazel_dep(name = "rules_haskell", version = "0.18")
 bazel_dep(name = "rules_haskell_nix")
 bazel_dep(name = "rules_go", version = "0.41.0", repo_name = "io_bazel_rules_go")
 bazel_dep(name = "gazelle", version = "0.33.0", repo_name = "bazel_gazelle")
@@ -65,20 +65,15 @@ register_toolchains(
     "@all_posix_toolchains//:all",
 )
 
-# TODO Remove once rules_haskell is in the BCR.
-RULES_HASKELL_REV = "25831a7a3313fbadb6dbd166fca20ced6c38a1d1"
-RULES_HASKELL_INTEGRITY = "sha384-U+jg9U1fF4ibW5TDzj6UruKqD9ELsUA60QEO1MMTxbgG1BJnh0+JbQd3BcTHroSn"
-archive_override(
-    module_name = "rules_haskell",
-    urls = ["https://github.com/tweag/rules_haskell/archive/%s.tar.gz" % RULES_HASKELL_REV],
-    strip_prefix = "rules_haskell-%s" % RULES_HASKELL_REV,
-    integrity = RULES_HASKELL_INTEGRITY,
-)
+# TODO Remove once rules_haskell_nix is in the BCR.
+RULES_HASKELL_REV = "0.18"
+RULES_HASKELL_INTEGRITY = "sha256-0fDhvU8dXiSLKIK/3HwxoUYRL52FudLw73fnjQLsukU="
+
 archive_override(
     module_name = "rules_haskell_nix",
-    urls = ["https://github.com/tweag/rules_haskell/archive/%s.tar.gz" % RULES_HASKELL_REV],
-    strip_prefix = "rules_haskell-%s/rules_haskell_nix" % RULES_HASKELL_REV,
     integrity = RULES_HASKELL_INTEGRITY,
+    strip_prefix = "rules_haskell-%s/rules_haskell_nix" % RULES_HASKELL_REV,
+    urls = ["https://github.com/tweag/rules_haskell/releases/download/v{REV}/rules_haskell-{REV}.tar.gz".format(REV = RULES_HASKELL_REV)],
 )
 
 # Needed for custom toolchain definitions in non_module_deps.
