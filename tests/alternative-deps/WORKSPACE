@@ -106,7 +106,10 @@ http_archive(
 
 load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 
-nixpkgs_go_configure(repository = "@nixpkgs")
+nixpkgs_go_configure(
+    attribute_path = "go_1_20",
+    repository = "@nixpkgs",
+)
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies")
 
