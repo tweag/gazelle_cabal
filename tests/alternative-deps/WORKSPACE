@@ -8,6 +8,38 @@ local_repository(
 )
 
 ##########################
+# rules_nixpkgs preamble
+##########################
+
+http_archive(
+    name = "io_tweag_rules_nixpkgs",
+    sha256 = "2a555348d7f8593fca2bf3fc6ce53c5d62929de81b6c292e23f16c557c0ae45a",
+    strip_prefix = "rules_nixpkgs-0.11.1",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.11.1/rules_nixpkgs-0.11.1.tar.gz"],
+)
+
+http_archive(
+    name = "rules_nixpkgs_core",
+    sha256 = "2a555348d7f8593fca2bf3fc6ce53c5d62929de81b6c292e23f16c557c0ae45a",
+    strip_prefix = "rules_nixpkgs-0.11.1/core",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.11.1/rules_nixpkgs-0.11.1.tar.gz"],
+)
+
+[
+    http_archive(
+        name = "rules_nixpkgs_" + toolchain,
+        sha256 = "2a555348d7f8593fca2bf3fc6ce53c5d62929de81b6c292e23f16c557c0ae45a",
+        strip_prefix = "rules_nixpkgs-0.11.1/toolchains/" + toolchain,
+        urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.11.1/rules_nixpkgs-0.11.1.tar.gz"],
+    )
+    for toolchain in [
+        "python",
+        "go",
+        "posix",
+    ]
+]
+
+##########################
 # rules_haskell preamble
 ##########################
 
@@ -22,7 +54,7 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_local_repository")
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_local_repository", "nixpkgs_package")
 
 nixpkgs_local_repository(
     name = "nixpkgs",
@@ -143,8 +175,6 @@ gazelle_dependencies()
 ####################
 # zlib
 ####################
-
-load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_package")
 
 nixpkgs_package(
     name = "nixpkgs_zlib",

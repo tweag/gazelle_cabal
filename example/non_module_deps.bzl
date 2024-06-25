@@ -1,9 +1,9 @@
+load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
 load(
     "@rules_nixpkgs_core//:nixpkgs.bzl",
     "nixpkgs_local_repository",
     "nixpkgs_package",
 )
-load("@rules_nixpkgs_cc//:cc.bzl", "nixpkgs_cc_configure")
 
 def _non_module_deps_impl(_ctx):
     nixpkgs_local_repository(
