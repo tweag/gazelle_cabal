@@ -148,7 +148,6 @@ http_archive(
 load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 
 nixpkgs_go_configure(
-    attribute_path = "go_1_20",
     repository = "@nixpkgs",
 )
 
