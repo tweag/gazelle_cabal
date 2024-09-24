@@ -40,9 +40,9 @@ http_archive(
 
 http_archive(
     name = "rules_haskell",
-    sha256 = "34742848a8882d94a0437b3b1917dea6f58c82fe5762afe8d249d3a36e51935d",
-    strip_prefix = "rules_haskell-0.19",
-    urls = ["https://github.com/tweag/rules_haskell/releases/download/v0.19/rules_haskell-0.19.tar.gz"],
+    sha256 = "4cae22bc84f327bf3cb7605021c3663160ff6bc8a0b7b6266062366bcbd19e79",
+    strip_prefix = "rules_haskell-1.0",
+    urls = ["https://github.com/tweag/rules_haskell/releases/download/v1.0/rules_haskell-1.0.tar.gz"],
 )
 
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
