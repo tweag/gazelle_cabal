@@ -86,7 +86,7 @@ bazel_dep(name = "rules_nixpkgs_core")
 bazel_dep(name = "rules_nixpkgs_cc")
 bazel_dep(name = "rules_nixpkgs_posix")
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "rules_cc", version = "0.0.9")
+bazel_dep(name = "rules_cc", version = "0.1.1")
 
 # TODO Remove once rules_nixpkgs is in the BCR.
 RULES_NIXPKGS_REV = "7e627d76ba65d6c42586fc265e46bd370672b4eb"
