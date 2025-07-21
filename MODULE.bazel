@@ -10,6 +10,7 @@ stack_snapshot = use_extension(
     "stack_snapshot",
 )
 use_repo(stack_snapshot, "stackage")
+
 stack_snapshot.package(name = "directory")
 stack_snapshot.package(name = "filepath")
 stack_snapshot.package(name = "json")
