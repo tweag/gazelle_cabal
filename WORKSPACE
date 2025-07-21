@@ -3,6 +3,45 @@ workspace(name = "io_tweag_gazelle_cabal")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 ##########################
+# rules_java preamble
+##########################
+
+http_archive(
+    name = "rules_proto",
+    sha256 = "14a225870ab4e91869652cfd69ef2028277fc1dc4910d65d353b62d6e0ae21f4",
+    strip_prefix = "rules_proto-7.1.0",
+    url = "https://github.com/bazelbuild/rules_proto/releases/download/7.1.0/rules_proto-7.1.0.tar.gz",
+)
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
+
+rules_proto_dependencies()
+
+load("@rules_proto//proto:setup.bzl", "rules_proto_setup")
+
+rules_proto_setup()
+
+load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
+
+rules_proto_toolchains()
+
+http_archive(
+    name = "rules_java",
+    sha256 = "7b0d9ba216c821ee8697dedc0f9d0a705959ace462a3885fe9ba0347ba950111",
+    urls = [
+        "https://github.com/bazelbuild/rules_java/releases/download/6.5.1/rules_java-6.5.1.tar.gz",
+    ],
+)
+
+load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
+
+rules_java_dependencies()
+
+load("@rules_java//java:repositories.bzl", "rules_java_toolchains")
+
+rules_java_toolchains()
+
+##########################
 # rules_nixpkgs preamble
 ##########################
 
@@ -183,25 +222,6 @@ gazelle_dependencies()
 #######################
 # Buildifier preamble
 #######################
-
-http_archive(
-    name = "rules_proto",
-    sha256 = "14a225870ab4e91869652cfd69ef2028277fc1dc4910d65d353b62d6e0ae21f4",
-    strip_prefix = "rules_proto-7.1.0",
-    url = "https://github.com/bazelbuild/rules_proto/releases/download/7.1.0/rules_proto-7.1.0.tar.gz",
-)
-
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
-
-rules_proto_dependencies()
-
-load("@rules_proto//proto:setup.bzl", "rules_proto_setup")
-
-rules_proto_setup()
-
-load("@rules_proto//proto:toolchains.bzl", "rules_proto_toolchains")
-
-rules_proto_toolchains()
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
