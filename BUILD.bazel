@@ -1,10 +1,9 @@
-load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
+load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "buildifier_test")
 
 exports_files(["defs.bzl"])
 
-buildifier(
-    name = "buildifier-diff",
-    mode = "diff",
+buildifier_test(
+    name = "buildifier-check",
 )
 
 buildifier(

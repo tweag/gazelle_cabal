@@ -142,7 +142,7 @@ jobs:
         if: ${{ !matrix.enable-bzlmod }}
         uses: tweag/run-nix-shell@v0
         with:
-          run: bazel run //:buildifier-diff
+          run: bazel test //:buildifier-check
 
   all_ci_tests:
     runs-on: ubuntu-latest
