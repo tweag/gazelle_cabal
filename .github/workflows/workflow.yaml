@@ -36,16 +36,16 @@ jobs:
             enable-bzlmod: true
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Mount Bazel cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ~/repo-cache
           key: repo-cache-${{ runner.os }}-nixpkgs-${{ env.cache-version }}
-      - uses: cachix/install-nix-action@v31
+      - uses: cachix/install-nix-action@a809471b5c7c913aa67bec8f459a11a0decc3fce # v31.6.2
         with:
           nix_path: nixpkgs=./nixpkgs.nix
-      - uses: tweag/configure-bazel-remote-cache-auth@v0
+      - uses: tweag/configure-bazel-remote-cache-auth@144b0b915f13a418f5eafe2f68d19564ec136c62 # v0.1.1
         with:
           buildbuddy_api_key: ${{ secrets.BUILDBUDDY_API_KEY }}
           bazelrc_path: .bazelrc.auth
@@ -71,7 +71,7 @@ jobs:
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
       - name: Build & test
         if: ${{ !matrix.enable-bzlmod }}
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@0d73770bd05096508387d191649e5e858a3c2654 # v0.2.1
         with:
           run: bazel test --config=${{ matrix.ghc-version }} --test_output=all //...
       - name: Test the example
@@ -131,7 +131,7 @@ jobs:
           nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
       - name: Test alternative dependencies
         if: ${{ !matrix.enable-bzlmod }}
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@0d73770bd05096508387d191649e5e858a3c2654 # v0.2.1
         with:
           working-directory: tests/alternative-deps
           run: |
@@ -140,7 +140,7 @@ jobs:
             bazel test //... --config=${{ matrix.ghc-version }}
       - name: Test for buildifier suggestions
         if: ${{ !matrix.enable-bzlmod }}
-        uses: tweag/run-nix-shell@v0
+        uses: tweag/run-nix-shell@0d73770bd05096508387d191649e5e858a3c2654 # v0.2.1
         with:
           run: bazel test //:buildifier-check
 
@@ -150,6 +150,6 @@ jobs:
       - test-nixpkgs
     if: ${{ always() }}
     steps:
-      - uses: cgrindel/gha_join_jobs@8a9736c29a7e5ebd9f3af2870f59cb6d563b6659 # v1
+      - uses: cgrindel/gha_join_jobs@8a9736c29a7e5ebd9f3af2870f59cb6d563b6659 # v1.4.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
