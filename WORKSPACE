@@ -177,10 +177,10 @@ haskell_register_ghc_nixpkgs(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "89d2050410602142c9acafd01c95baf48b65f8dd16f4771d37c89f82f5e147f2",
+    sha256 = "82f0af253fc61c7f06b005c67c079573776111185b7c3742563f751178aaa4c0",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.56.1/rules_go-v0.56.1.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.56.1/rules_go-v0.56.1.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.58.3/rules_go-v0.58.3.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.58.3/rules_go-v0.58.3.zip",
     ],
 )
 
