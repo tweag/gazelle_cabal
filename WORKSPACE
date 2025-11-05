@@ -27,9 +27,9 @@ rules_proto_toolchains()
 
 http_archive(
     name = "rules_java",
-    sha256 = "19008f8a85125c9476ef37b6ad945f665d7178aaab3746f7962917ccd87d2477",
+    sha256 = "baf2e93c8190d05e08231fc4b76084f7d85c5d4dc75aa1d2919a3bc4107662cc",
     urls = [
-        "https://github.com/bazelbuild/rules_java/releases/download/9.0.0/rules_java-9.0.0.tar.gz",
+        "https://github.com/bazelbuild/rules_java/releases/download/9.0.2/rules_java-9.0.2.tar.gz",
     ],
 )
 
