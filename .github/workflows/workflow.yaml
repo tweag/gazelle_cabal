@@ -22,14 +22,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ghc-version: [ghc_8_10_7, ghc_9_0_2, ghc_9_2_7, ghc_9_4_5, ghc_9_6_5]
+        ghc-version: [ghc_8_10_7, ghc_9_0_2, ghc_9_2_8, ghc_9_4_8, ghc_9_6_5]
         enable-bzlmod: [false]
         include:
           - os: ubuntu-latest
-            ghc-version: ghc_9_2_7
+            ghc-version: ghc_9_2_8
             enable-bzlmod: true
           - os: ubuntu-latest
-            ghc-version: ghc_9_4_5
+            ghc-version: ghc_9_4_8
             enable-bzlmod: true
           - os: ubuntu-latest
             ghc-version: ghc_9_6_5

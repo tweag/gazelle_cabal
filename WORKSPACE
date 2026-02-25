@@ -88,7 +88,7 @@ load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
 
-load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_local_repository")
+load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_local_repository", "nixpkgs_package")
 
 nixpkgs_local_repository(
     name = "nixpkgs",
@@ -230,4 +230,16 @@ http_archive(
     urls = [
         "https://github.com/bazelbuild/buildtools/archive/refs/tags/v8.2.1.tar.gz",
     ],
+)
+
+nixpkgs_package(
+    name = "buildifier",
+    attribute_path = "buildifier",
+    build_file_content = """\
+filegroup(
+  name = "buildifier",
+  srcs = ["bin/buildifier"],
+  visibility = ["//visibility:public"]
+)""",
+    repository = "@nixpkgs",
 )
