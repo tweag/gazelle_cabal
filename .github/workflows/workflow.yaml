@@ -71,7 +71,7 @@ jobs:
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
       - name: Build & test
         if: ${{ !matrix.enable-bzlmod }}
-        uses: tweag/run-nix-shell@0d73770bd05096508387d191649e5e858a3c2654 # v0.2.1
+        uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
           run: bazel test --config=${{ matrix.ghc-version }} --test_output=all //...
       - name: Test the example
@@ -131,7 +131,7 @@ jobs:
           nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
       - name: Test alternative dependencies
         if: ${{ !matrix.enable-bzlmod }}
-        uses: tweag/run-nix-shell@0d73770bd05096508387d191649e5e858a3c2654 # v0.2.1
+        uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
           working-directory: tests/alternative-deps
           run: |
@@ -140,7 +140,7 @@ jobs:
             bazel test //... --config=${{ matrix.ghc-version }}
       - name: Test for buildifier suggestions
         if: ${{ !matrix.enable-bzlmod }}
-        uses: tweag/run-nix-shell@0d73770bd05096508387d191649e5e858a3c2654 # v0.2.1
+        uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
           run: bazel test //:buildifier-check
 
