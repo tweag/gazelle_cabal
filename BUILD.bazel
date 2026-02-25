@@ -2,11 +2,22 @@ load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier", "bui
 
 exports_files(["defs.bzl"])
 
+_lint_warnings = [
+    "-module-docstring",  # disable module docstrings
+]
+
 buildifier_test(
     name = "buildifier-check",
+    buildifier = "@buildifier//:buildifier",
+    lint_mode = "warn",
+    lint_warnings = _lint_warnings,
+    no_sandbox = True,
+    workspace = ":WORKSPACE",
 )
 
 buildifier(
     name = "buildifier",
-    lint_mode = "warn",
+    buildifier = "@buildifier//:buildifier",
+    lint_mode = "fix",
+    lint_warnings = _lint_warnings,
 )
