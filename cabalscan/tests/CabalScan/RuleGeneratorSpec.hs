@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 module CabalScan.RuleGeneratorSpec where
 
@@ -9,7 +8,7 @@ import qualified System.Directory as Path
 import qualified System.IO.Temp as Temp
 
 spec_toLibraryTarget :: Spec
-spec_toLibraryTarget = do
+spec_toLibraryTarget =
   describe "RuleGenerator.findModulePaths" $ do
     it "should find modules in multiple directories" $ do
       cwd <- Path.getCurrentDirectory

@@ -1,8 +1,9 @@
 {-#LANGUAGE CPP #-}
+{-#LANGUAGE PatternSynonyms #-}
 
 #if __GLASGOW_HASKELL__ == 810
 
-module Cabal.Cabal_8_10(module Cabal)
+module Cabal.Cabal_8_10(module Cabal, PackageFlag, ConfVar(PackageFlag))
 
 where
 
@@ -12,7 +13,9 @@ import Distribution.Package as Cabal ()
 import Distribution.PackageDescription as Cabal (allLibraries, executables, testSuites, benchmarks, package, dataFiles, Library, libName, exposedModules, libBuildInfo, LibraryName(LSubLibName), Executable, exeName, buildInfo, hsSourceDirs, modulePath, TestSuite, testName, testBuildInfo, TestSuiteInterface(TestSuiteExeV10), testInterface, Benchmark, benchmarkName, benchmarkBuildInfo, BenchmarkInterface(BenchmarkExeV10), benchmarkInterface, BuildInfo, buildable, otherModules, extraLibs)
 import Distribution.PackageDescription.Configuration as Cabal (finalizePD)
 import Distribution.PackageDescription.Parsec as Cabal (readGenericPackageDescription)
-import Distribution.Types.BuildInfo as Cabal (buildToolDepends, targetBuildDepends, defaultExtensions, cppOptions, ldOptions, options)
+import Distribution.Types.GenericPackageDescription as Cabal (GenericPackageDescription, condLibrary, condExecutables, condTestSuites, condBenchmarks, packageDescription, condSubLibraries, genPackageFlags)
+import Distribution.Types.Flag as Cabal (Flag, FlagName, flagName, flagDefault, unFlagName)
+import Distribution.Types.BuildInfo as Cabal (buildToolDepends, emptyBuildInfo, targetBuildDepends, defaultExtensions, cppOptions, ldOptions, options)
 import Distribution.Types.ComponentRequestedSpec as Cabal (ComponentRequestedSpec(ComponentRequestedSpec), testsRequested, benchmarksRequested)
 import Distribution.Types.Dependency as Cabal (Dependency, depLibraries, depPkgName)
 import Distribution.Types.ExeDependency as Cabal (ExeDependency(ExeDependency))
@@ -23,9 +26,16 @@ import Distribution.Types.PackageId as Cabal (PackageIdentifier, pkgName, pkgVer
 import Distribution.Types.PackageName as Cabal (PackageName, unPackageName)
 import Distribution.Types.UnqualComponentName as Cabal (unUnqualComponentName)
 import Distribution.Types.Version as Cabal (mkVersion)
+import Distribution.Types.VersionRange as Cabal (withinRange)
 import Distribution.Pretty as Cabal (prettyShow)
 import Distribution.System as Cabal (Platform(Platform), buildArch, buildOS)
 import Distribution.Verbosity as Cabal (silent)
+import Distribution.Types.ConfVar as Cabal (ConfVar(..))
+
+type PackageFlag = Cabal.Flag
+
+pattern PackageFlag :: FlagName -> ConfVar
+pattern PackageFlag f <- Cabal.Flag f
 
 #else
 
