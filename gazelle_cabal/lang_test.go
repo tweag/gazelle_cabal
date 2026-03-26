@@ -1,9 +1,9 @@
 package gazelle_cabal
 
 import (
+	"github.com/bazelbuild/bazel-gazelle/rule"
 	"reflect"
 	"testing"
-	"github.com/bazelbuild/bazel-gazelle/rule"
 )
 
 func TestCopyPrivateAttrs(t *testing.T) {
@@ -14,7 +14,7 @@ func TestCopyPrivateAttrs(t *testing.T) {
 	from := rule.NewRule("from", "tweag")
 	to := rule.NewRule("from", "tweag")
 
-	for k,v := range wanted {
+	for k, v := range wanted {
 		from.SetPrivateAttr(k, v)
 	}
 
