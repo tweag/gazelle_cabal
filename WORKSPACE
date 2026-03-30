@@ -187,6 +187,7 @@ http_archive(
 load("@rules_nixpkgs_go//:go.bzl", "nixpkgs_go_configure")
 
 nixpkgs_go_configure(
+    attribute_path = "go_1_23",
     repository = "@nixpkgs",
 )
 
@@ -225,10 +226,10 @@ gazelle_dependencies()
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "53119397bbce1cd7e4c590e117dcda343c2086199de62932106c80733526c261",
-    strip_prefix = "buildtools-8.2.1",
+    sha256 = "f3b800e9f6ca60bdef3709440f393348f7c18a29f30814288a7326285c80aab9",
+    strip_prefix = "buildtools-8.5.1",
     urls = [
-        "https://github.com/bazelbuild/buildtools/archive/refs/tags/v8.2.1.tar.gz",
+        "https://github.com/bazelbuild/buildtools/archive/refs/tags/v8.5.1.tar.gz",
     ],
 )
 
