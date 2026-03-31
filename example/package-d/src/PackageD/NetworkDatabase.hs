@@ -2,12 +2,12 @@ module PackageD.NetworkDatabase
   ( syncData
   ) where
 
+import Database.SQLite3
 import Network.Socket (HostName)
-import Database.SQLite.Simple
 import PackageD.Network
 import PackageD.Database
 
-syncData :: HostName -> Connection -> IO ()
+syncData :: HostName -> Database -> IO ()
 syncData host conn = do
   _ <- fetchData host
   _ <- queryData conn

@@ -46,7 +46,7 @@ library
       exposed-modules:
         PackageD.Database
       build-depends:
-        sqlite-simple
+        direct-sqlite
       other-modules:
         PackageD.Internal.DatabaseImpl
     

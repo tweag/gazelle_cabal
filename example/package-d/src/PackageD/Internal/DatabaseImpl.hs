@@ -2,7 +2,7 @@ module PackageD.Internal.DatabaseImpl
   ( dbQuery
   ) where
 
-import Database.SQLite.Simple
+import Database.SQLite3
 
-dbQuery :: Connection -> IO [String]
+dbQuery :: Database -> IO [String]
 dbQuery _ = return ["row1", "row2"]

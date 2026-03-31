@@ -2,8 +2,8 @@ module PackageD.Database
   ( queryData
   ) where
 
-import Database.SQLite.Simple
+import Database.SQLite3
 import PackageD.Internal.DatabaseImpl
 
-queryData :: Connection -> IO [String]
+queryData :: Database -> IO [String]
 queryData = dbQuery
