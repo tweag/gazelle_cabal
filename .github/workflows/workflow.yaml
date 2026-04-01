@@ -62,7 +62,6 @@ jobs:
           fi
 
           cat >>.bazelrc.local <<EOF
-          build --host_platform=@rules_nixpkgs_core//platforms:host
           build --config=remote-cache
           build --repository_cache=~/repo-cache/
           $bzlmod_setting
