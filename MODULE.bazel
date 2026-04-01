@@ -42,6 +42,23 @@ nix_repo.file(
 )
 use_repo(nix_repo, "nixpkgs")
 
+nix_pkg = use_extension(
+    "@rules_nixpkgs_core//extensions:package.bzl",
+    "nix_pkg",
+    dev_dependency = True,
+)
+nix_pkg.attr(
+    name = "buildifier",
+    attr = "buildifier",
+    build_file_content = """\
+filegroup(
+  name = "buildifier",
+  srcs = ["bin/buildifier"],
+  visibility = ["//visibility:public"]
+)""",
+)
+use_repo(nix_pkg, "buildifier")
+
 # TODO Remove once rules_haskell_nix is in the BCR.
 
 bazel_dep(name = "rules_haskell_nix", dev_dependency = True)
