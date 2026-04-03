@@ -1,3 +1,6 @@
+
+build --host_platform=@rules_nixpkgs_core//platforms:host
+
 # Remote Cache Configuration
 build:remote-cache --bes_results_url=https://app.buildbuddy.io/invocation/
 build:remote-cache --bes_backend=grpcs://remote.buildbuddy.io
