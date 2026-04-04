@@ -17,7 +17,7 @@ flag experimental
 
 flag database
     description: Enable database support
-    default: True
+    default: False
     manual: True
 
 library
