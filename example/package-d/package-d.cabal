@@ -70,5 +70,11 @@ executable package-d-cli
       build-depends:
         optparse-applicative
     
+    if flag(database)
+      cpp-options: -DDATABASE_SUPPORT
+
+    if flag(network-support) && flag(database)
+      cpp-options: -DDATABASE_AND_NETWORK_SUPPORT
+
     hs-source-dirs: app
     default-language: Haskell2010

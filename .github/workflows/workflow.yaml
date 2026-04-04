@@ -129,6 +129,12 @@ jobs:
           # Test gazelle-update-repos
           nix-shell --pure --run 'bazel run //:gazelle-update-repos'
           nix-shell --pure --run 'bazel test //...'
+      - name: Check if package-d flags work
+        uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
+        with:
+          working-directory: example
+          run: |
+            package-d/test_flags.sh
       - name: Test alternative dependencies
         if: ${{ !matrix.enable-bzlmod }}
         uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
