@@ -11,6 +11,8 @@ import qualified Text.JSON as Json
 import Data.List.NonEmpty (NonEmpty((:|)))
 import Data.Map (Map)
 import qualified Data.Map as Map
+import Data.Set (Set)
+import qualified Data.Set as Set
 import Data.Function ((&))
 -- | Information about rules to give to bazel
 --
@@ -55,19 +57,19 @@ import Data.Function ((&))
 data PackageOutput = PackageOutput
   { flags :: [Flag]
   , rules :: [RuleInfo]
-  , configSettingGroups :: [ConfigSettingGroup]
+  , configSettingGroups :: Set ConfigSettingGroup
   }
 
 data ConfigSettingGroup = ConfigSettingGroup
   { groupName :: String
   , matchAll :: [String]
-  } deriving (Eq, Show)
+  } deriving (Eq, Ord, Show)
 
 instance Semigroup PackageOutput where
   (<>) a b = PackageOutput
     { flags = flags a <> flags b
     , rules = rules a <> rules b
-    , configSettingGroups = configSettingGroups a <> configSettingGroups b
+    , configSettingGroups = configSettingGroups a `Set.union` configSettingGroups b
     }
 
 data RuleInfo = RuleInfo

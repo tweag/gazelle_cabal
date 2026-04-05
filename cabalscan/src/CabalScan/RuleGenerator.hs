@@ -80,7 +80,7 @@ generateRulesForCabalFile cabalFilePath = do
   benchmarkRules <-
     traverse (generateRule BENCH cabalFilePath pkgId dataFiles) benchmarks
   let allRules = catMaybes $ libRules ++ executablesRules ++ testSuiteRules ++ benchmarkRules
-      allConfigGroups = concatMap extractConfigGroups allRules
+      allConfigGroups = Set.fromList $ concatMap extractConfigGroups allRules
   return $ PackageOutput (mkFlag <$> packageFlags) allRules allConfigGroups
   where
     mkFlag flag = CabalScan.Rules.Flag (unFlagName $ flagName flag) (flagDefault flag)
