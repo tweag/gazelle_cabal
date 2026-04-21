@@ -108,8 +108,11 @@ dnf (Var confVar)     = dnfVar confVar
           label = "@platforms//os:" <> shortName
       in mkVar label shortName
     dnfVar (Arch arch) =
-      let shortName = show arch
-          label = "@platforms//arch:" <> shortName
+      let shortName =
+            case toLower <$> show arch of
+              "i386" -> "x86_32"
+              other -> other
+          label = "@platforms//cpu:" <> shortName
       in mkVar label shortName
     dnfVar (PackageFlag flag) =
       let shortName = unFlagName flag
