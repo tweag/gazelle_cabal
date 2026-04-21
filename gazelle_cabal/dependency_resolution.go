@@ -211,7 +211,7 @@ func findToolLabel(
 		toolString = toolString + "-binary"
 	}
 
-	spec := resolve.ImportSpec{gazelleCabalName, "exe:" + toolString}
+	spec := resolve.ImportSpec{Lang: gazelleCabalName, Imp: "exe:" + toolString}
 	res := ix.FindRulesByImport(spec, gazelleCabalName)
 	if len(res) > 0 {
 		return rel(res[0].Label, from)
@@ -396,7 +396,7 @@ func resolveLibraryList(c *config.Config, libs []string) ([]label.Label, []strin
 	var unresolvedValue []string
 
 	for _, lib := range libs {
-		spec := resolve.ImportSpec{gazelleCabalName, lib}
+		spec := resolve.ImportSpec{Lang: gazelleCabalName, Imp: lib}
 		if libLabel, ok := resolve.FindRuleWithOverride(c, spec, gazelleCabalName); ok {
 			foundValue = append(foundValue, libLabel)
 		} else {
@@ -419,7 +419,7 @@ func resolveLibrarySelect(
 
 	for k, libs := range sel {
 		for _, lib := range libs {
-			spec := resolve.ImportSpec{gazelleCabalName, lib}
+			spec := resolve.ImportSpec{Lang: gazelleCabalName, Imp: lib}
 			if libLabel, ok := resolve.FindRuleWithOverride(c, spec, gazelleCabalName); ok {
 				if foundSelect == nil {
 					foundSelect = make(map[string][]label.Label)
@@ -454,7 +454,7 @@ func getPluginLabel(
 	packageName string,
 	from label.Label,
 ) (label.Label, error) {
-	spec := resolve.ImportSpec{gazelleCabalName, "ghc_plugin:" + packageName + "-plugin"}
+	spec := resolve.ImportSpec{Lang: gazelleCabalName, Imp: "ghc_plugin:" + packageName + "-plugin"}
 	res := ix.FindRulesByImport(spec, gazelleCabalName)
 	if len(res) > 0 {
 		return rel(res[0].Label, from), nil
@@ -525,13 +525,13 @@ func searchInLibraries(
 	from label.Label,
 	importId string,
 ) (label.Label, error) {
-	spec := resolve.ImportSpec{gazelleCabalName, importId}
+	spec := resolve.ImportSpec{Lang: gazelleCabalName, Imp: importId}
 	res := ix.FindRulesByImport(spec, gazelleCabalName)
 
 	librariesFound := len(res)
 	if librariesFound > 1 {
 		// There are at least two cabal pkgs with the same name
-		log.Fatalf("Multiple labels found under %s for package $s : %s", from, pkgName, res)
+		log.Fatalf("Multiple labels found under %s for package %s : %s", from, pkgName, res)
 	}
 	// We take the dep we've found locally, if it's not a circular dependency
 	if librariesFound == 1 {
