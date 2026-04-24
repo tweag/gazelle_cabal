@@ -2,8 +2,9 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Functions to generate rules from Cabal files
 module CabalScan.RuleGenerator
@@ -14,18 +15,30 @@ module CabalScan.RuleGenerator
 
 import Control.Exception (Exception, throwIO)
 import Control.Monad (filterM)
-import Data.List (intersperse)
+import Data.List (intercalate, intersperse)
 import Data.List.NonEmpty (nonEmpty)
-import Data.Maybe (catMaybes, listToMaybe)
-import Data.Set.Internal as Set (toList)
+import qualified Data.Map as Map
+import Data.Maybe (catMaybes, fromMaybe, listToMaybe, mapMaybe, maybeToList)
+import qualified Data.Set as Set
 import qualified System.FilePath as Path
 import qualified System.Directory as Path
 import CabalScan.Rules
+import CabalScan.DNF
 import System.FilePath (dropExtension)
+import Debug.Trace as Debug
+import Distribution.Types.GenericPackageDescription
+import Distribution.Types.Flag
+import Distribution.Types.CondTree as CondTree
+import qualified Distribution.Types.BuildInfo.Lens as BL
+import Distribution.Compat.Lens ((^.), (%~))
+import Distribution.Types.ConfVar
+import Distribution.Types.Condition
+import Data.Char (toLower)
 
 #if __GLASGOW_HASKELL__ == 810
 
 import qualified Cabal.Cabal_8_10 as Cabal
+import Cabal.Cabal_8_10 (ConfVar(PackageFlag))
 
 #elif __GLASGOW_HASKELL__ == 900
 
@@ -45,186 +58,346 @@ import qualified Cabal.Cabal_9_4 as Cabal
 
 #endif
 
-generateRulesForCabalFile :: FilePath -> IO [RuleInfo]
+generateRulesForCabalFile :: FilePath -> IO PackageOutput
 generateRulesForCabalFile cabalFilePath = do
   pd <- readCabalFile cabalFilePath
-  let libraries = Cabal.allLibraries pd
-      executables = Cabal.executables pd
-      testsuites = Cabal.testSuites pd
-      benchmarks = Cabal.benchmarks pd
-      pkgId = Cabal.package pd
-      dataFiles = Cabal.dataFiles pd
-  libraryRules <-
-    traverse (generateLibraryRule cabalFilePath pkgId dataFiles) libraries
+  let packageFlags = genPackageFlags pd
+  let library = Cabal.condLibrary pd
+      subLibraries = Cabal.condSubLibraries pd
+      libraries = maybeToList library ++ (snd <$> subLibraries)
+      executables = snd <$> Cabal.condExecutables pd
+      testsuites = (\ (uqName, ts) -> mapTreeData (\ r -> r { Cabal.testName = uqName }) ts) <$> Cabal.condTestSuites pd
+      benchmarks = (\ (uqName, ts) -> mapTreeData (\ r -> r { Cabal.benchmarkName = uqName }) ts) <$> Cabal.condBenchmarks pd
+      pkgId = Cabal.package $ Cabal.packageDescription pd
+      dataFiles = Cabal.dataFiles $ Cabal.packageDescription pd
+
+  libRules <-
+    traverse (generateRule LIB cabalFilePath pkgId dataFiles) libraries
   executablesRules <-
-    traverse (generateBinaryRule cabalFilePath pkgId dataFiles) executables
+    traverse (generateRule EXE cabalFilePath pkgId dataFiles) executables
   testSuiteRules <-
-    traverse (generateTestRule cabalFilePath pkgId dataFiles) testsuites
+    traverse (generateRule TEST cabalFilePath pkgId dataFiles) testsuites
   benchmarkRules <-
-    traverse (generateBenchmarkRule cabalFilePath pkgId dataFiles) benchmarks
-  return $ catMaybes $ libraryRules ++ executablesRules ++ testSuiteRules ++ benchmarkRules
-
-generateLibraryRule
-  :: FilePath
-  -> Cabal.PackageIdentifier
-  -> [FilePath]
-  -> Cabal.Library
-  -> IO (Maybe RuleInfo)
-generateLibraryRule cabalFilePath pkgId dataFiles lib = do
-  let libraryName = obtainLibraryName $ Cabal.libName lib
-      exposedModules = map Cabal.toFilePath $ Cabal.exposedModules lib
-      buildInfo = Cabal.libBuildInfo lib
-      privAttrs = libPrivAttrs pkgId lib
-  generateRule
-    cabalFilePath
-    pkgId
-    dataFiles
-    buildInfo
-    exposedModules
-    LIB
-    libraryName
-    Nothing
-    privAttrs
+    traverse (generateRule BENCH cabalFilePath pkgId dataFiles) benchmarks
+  let allRules = catMaybes $ libRules ++ executablesRules ++ testSuiteRules ++ benchmarkRules
+      allConfigGroups = Set.fromList $ concatMap extractConfigGroups allRules
+  return $ PackageOutput (mkFlag <$> packageFlags) allRules allConfigGroups
   where
-    obtainLibraryName :: Cabal.LibraryName -> String
-    obtainLibraryName (Cabal.LSubLibName name) = Cabal.unUnqualComponentName $ name
-    obtainLibraryName _ = pkgNameToString $ Cabal.pkgName pkgId
+    mkFlag flag = CabalScan.Rules.Flag (unFlagName $ flagName flag) (flagDefault flag)
+    extractConfigGroups rule = ruleConfigGroups rule
 
-generateBinaryRule
-  :: FilePath
-  -> Cabal.PackageIdentifier
-  -> [FilePath]
-  -> Cabal.Executable
-  -> IO (Maybe RuleInfo)
-generateBinaryRule cabalFilePath pkgId dataFiles executable = do
-  let pkgName = pkgNameToString $ Cabal.pkgName pkgId
-      exeName = Cabal.unUnqualComponentName $ Cabal.exeName executable
-      targetName =
-        if exeName == pkgName then
-          exeName <> "-binary"
-        else
-          exeName
-      buildInfo = Cabal.buildInfo executable
-      srcDirs = Cabal.hsSourceDirs buildInfo
-      mainFilePath = Cabal.modulePath executable
-      modules = [dropExtension mainFilePath]
-      privAttrs = pkgNamePrivAttr pkgId
-  mainFile <- findMainFile cabalFilePath mainFilePath srcDirs
-  generateRule
-    cabalFilePath
-    pkgId
-    dataFiles
-    buildInfo
-    modules
-    EXE
-    targetName
-    (Just mainFile)
-    privAttrs
+dnf :: Condition ConfVar -> DNF
 
-generateTestRule
-  :: FilePath
-  -> Cabal.PackageIdentifier
-  -> [FilePath]
-  -> Cabal.TestSuite
-  -> IO (Maybe RuleInfo)
-generateTestRule cabalFilePath pkgId dataFiles testsuite = do
-  let testName = Cabal.unUnqualComponentName $ Cabal.testName testsuite
-      buildInfo = Cabal.testBuildInfo testsuite
-      srcDirs = Cabal.hsSourceDirs buildInfo
+dnf (CAnd s1 s2) = dnfAnd (dnf s1) (dnf s2)
+
+dnf (COr s1 s2)  = dnfOr (dnf s1) (dnf s2)
+
+dnf (CNot cond) = negateDNF $ dnf cond
+
+dnf (Lit b)       = dnfLit b
+  where
+    dnfLit :: Bool -> DNF
+    dnfLit False = DnfFalse
+    dnfLit True = DnfTrue
+
+dnf (Var confVar)     = dnfVar confVar
+  where
+    dnfVar :: ConfVar -> DNF
+    dnfVar (OS os) =
+      let shortName = toLower <$> show os
+          label = "@platforms//os:" <> shortName
+      in mkVar label shortName
+    dnfVar (Arch arch) =
+      let shortName =
+            case toLower <$> show arch of
+              "i386" -> "x86_32"
+              other -> other
+          label = "@platforms//cpu:" <> shortName
+      in mkVar label shortName
+    dnfVar (PackageFlag flag) =
+      let shortName = unFlagName flag
+          label = ":flag_" <> shortName
+      in mkVar label shortName
+    dnfVar (Impl Cabal.GHC range) =
+      dnf $ Lit (Cabal.withinRange ghcVersion range)
+    dnfVar (Impl flavor _) = error $ "unsupported compiler flavor " <> show flavor
+#if __GLASGOW_HASKELL__ == 810
+    -- just to please the exhaustiveness checker, which doesn't realize PackageFlag is a synonym for Flag
+    dnfVar _ = error "never reached"
+#endif
+
+    mkVar :: String -> String -> DNF
+    mkVar label shortName = Disj $ Set.singleton $ Conj $ Set.singleton $ JustT (VarT label shortName)
+
+    ghcVersion = Cabal.mkVersion
+      [ div __GLASGOW_HASKELL__ 100
+      , mod __GLASGOW_HASKELL__ 10
+      , __GLASGOW_HASKELL_PATCHLEVEL1__
+      ]
+
+data RuleDataCond = RuleDataCond {
+  rdValue :: RuleData,
+  rdBranches :: [(DNF, RuleData, Maybe RuleData)]
+} deriving Show
+
+data RuleDataBranch = RuleDataBranch {
+  rdCond :: DNF,
+  rdTrue :: RuleDataCond,
+  rdFalse :: Maybe RuleDataCond
+} deriving Show
+
+class RuleConversion a where
+  attrs :: Cabal.PackageIdentifier -> a -> Attributes
+  getMainFile :: a -> Maybe FilePath
+  ruleName :: Cabal.PackageIdentifier -> a -> String
+  modules :: a -> [FilePath]
+  hiddenMods :: a -> [String]
+
+instance RuleConversion Cabal.Executable where
+  attrs pkgId _ = pkgNamePrivAttr pkgId
+  getMainFile = Just . Cabal.modulePath
+  ruleName pkgId exe = let
+      pkgName = pkgNameToString $ Cabal.pkgName pkgId
+      exeName = Cabal.unUnqualComponentName $ Cabal.exeName exe
+    in
+      if exeName == pkgName then
+        exeName <> "-binary"
+      else
+        exeName
+  modules exe = filter (not . null) [Cabal.modulePath exe]
+  hiddenMods _ = []
+
+instance RuleConversion Cabal.Library where
+  attrs = libPrivAttrs
+  getMainFile _ = Nothing
+  ruleName pkgId lib = case Cabal.libName lib of
+    Cabal.LSubLibName name -> Cabal.unUnqualComponentName name
+    _ -> pkgNameToString $ Cabal.pkgName pkgId
+  modules lib = map Cabal.toFilePath $ Cabal.exposedModules lib
+  hiddenMods lib =  [ qualifiedModulePath m | m <- Cabal.otherModules $ lib ^. BL.buildInfo ]
+    where
+      qualifiedModulePath = mconcat . intersperse "." . Cabal.components
+
+
+instance RuleConversion Cabal.Benchmark where
+  attrs pkgId _ = pkgNamePrivAttr pkgId
+  getMainFile = listToMaybe . modules
+  ruleName _ = Cabal.unUnqualComponentName . Cabal.benchmarkName
+  modules benchmark = [path | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark ] ]
+  hiddenMods _ = []
+
+instance RuleConversion Cabal.TestSuite where
+  attrs pkgId _ = pkgNamePrivAttr pkgId
+  getMainFile testsuite =
+    let
       mainFiles = [ path | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite] ]
-      mainModules = map dropExtension mainFiles
-      privAttrs = pkgNamePrivAttr pkgId
-  mainRelPaths <- sequence [ findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
-  generateRule
-    cabalFilePath
-    pkgId
-    dataFiles
-    buildInfo
-    mainModules
-    TEST
-    testName
-    (listToMaybe mainRelPaths)
-    privAttrs
+    in
+      listToMaybe mainFiles
+  ruleName _ = Cabal.unUnqualComponentName . Cabal.testName
+  modules testsuite = [ path | Cabal.TestSuiteExeV10 _ path <- [Cabal.testInterface testsuite] ]
+  hiddenMods _ = []
 
-generateBenchmarkRule
-  :: FilePath
-  -> Cabal.PackageIdentifier
-  -> [FilePath]
-  -> Cabal.Benchmark
-  -> IO (Maybe RuleInfo)
-generateBenchmarkRule cabalFilePath pkgId dataFiles benchmark = do
-  let benchName = Cabal.unUnqualComponentName $ Cabal.benchmarkName benchmark
-      buildInfo = Cabal.benchmarkBuildInfo benchmark
-      srcDirs = Cabal.hsSourceDirs buildInfo
-      mainFiles = [path | Cabal.BenchmarkExeV10 _ path <- [Cabal.benchmarkInterface benchmark]]
-      mainModule = map dropExtension mainFiles
-      privAttrs = pkgNamePrivAttr pkgId
-  mainRelPaths <- sequence [ findMainFile cabalFilePath mainis srcDirs | mainis <- mainFiles ]
-  generateRule
-    cabalFilePath
-    pkgId
-    dataFiles
-    buildInfo
-    mainModule
-    BENCH
-    benchName
-    (listToMaybe mainRelPaths)
-    privAttrs
+getSources :: Cabal.BuildInfo -> FilePath -> String -> [FilePath] -> IO [FilePath]
+getSources bi cabalFilePath attrName someModules = do
+    let otherModules = map Cabal.toFilePath (Cabal.otherModules bi)
+        hsSourceDirs = Cabal.hsSourceDirs bi
+    someModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs someModules
+    otherModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs otherModules
+    return $ someModulePaths ++ otherModulePaths
 
 generateRule
-  :: FilePath
+  :: forall v. (BL.HasBuildInfo v, RuleConversion v)
+  => ComponentType
+  -> FilePath
   -> Cabal.PackageIdentifier
   -> [FilePath]
-  -> Cabal.BuildInfo
-  -> [FilePath]
-  -> ComponentType
-  -> String
-  -> Maybe FilePath
-  -> Attributes
+  -> CondTree ConfVar [Cabal.Dependency] v
   -> IO (Maybe RuleInfo)
-generateRule _ _ _ bi _ _ _ _ _ | not (Cabal.buildable bi) = return Nothing
-generateRule cabalFilePath pkgId dataFiles bi someModules ctype attrName mainFile privAttrs = do
-  let pkgName = pkgNameToString $ Cabal.pkgName pkgId
-      pkgVersion = Cabal.prettyShow $ Cabal.pkgVersion pkgId
-      versionMacro =
-        "-DVERSION_" <> map underscorify pkgName <> "=" <> show pkgVersion
-      otherModules = map Cabal.toFilePath (Cabal.otherModules bi)
-      deps =  depPackageNames bi
-  let hsSourceDirs = Cabal.hsSourceDirs bi
-  someModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs someModules
-  otherModulePaths <- findModulesPaths attrName cabalFilePath hsSourceDirs otherModules
-  return $ Just $ RuleInfo
-        { kind = componentTypeToRuleName ctype
-        , name = attrName
-        , cabalFile = cabalFilePath
-        , importData = ImportData
-          { deps
-          , ghcOpts = versionMacro : optionsFromBuildInfo bi
-          , extraLibraries = Cabal.extraLibs bi
-          , tools = map toToolName $ Cabal.buildToolDepends bi
-          }
-        , version = pkgVersion
-        , srcs = someModulePaths ++ otherModulePaths
-        , hiddenModules
-        , dataAttr =
+generateRule compType cabalFilePath pkgId dataFiles (CondNode var deps branches) =
+  if var^.BL.buildable then do
+    RuleDataCond { .. } <- handleNode var deps branches
+    let pkgName = pkgNameToString $ Cabal.pkgName pkgId
+        pkgVersion = Cabal.prettyShow $ Cabal.pkgVersion pkgId
+
+        pkgDepNames = depPackageNames $ var^.BL.buildInfo
+        versionMacro =
+          "-DVERSION_" <> map underscorify pkgName <> "=" <> show pkgVersion
+        hsSourceDirs = Cabal.hsSourceDirs $ var^.BL.buildInfo
+        (selects, allConfigGroups) = unzip $ map dnfToSelect rdBranches
+        configGroups = concat allConfigGroups
+
+    mainFile <- case getMainFile var of
+      Just path -> do
+        ret <- findMainFile cabalFilePath path hsSourceDirs
+        return $ Just ret
+      Nothing -> return Nothing
+
+    return $ Just $ RuleInfo {
+      name = ruleName pkgId var,
+      kind = componentTypeToRuleName compType,
+      cabalFile = cabalFilePath,
+      version = pkgVersion,
+      srcs = get rSrcs rdValue selects,
+      hiddenModules = nonEmpty $ get rHiddenModules rdValue selects,
+      mainFile = mainFile,
+      dataAttr =
             -- The library always includes data files, and the other
             -- components must include them if they don't depend on the
             -- library.
-            if ctype == LIB || pkgName `notElem` deps
+            if compType == LIB || pkgName `notElem` pkgDepNames
             then nonEmpty dataFiles
-            else Nothing
-        , mainFile = mainFile
-        , privateAttrs = privAttrs
-        }
-  where
-    hiddenModules = case ctype of
-      LIB -> nonEmpty [ qualifiedModulePath m | m <- Cabal.otherModules bi ]
-      _ -> Nothing
-
-    qualifiedModulePath = mconcat . intersperse "." . Cabal.components
-
+            else Nothing,
+      privateAttrs = attrs pkgId var,
+      ruleConfigGroups = configGroups,
+      importData = ImportData {
+         deps = get rDeps rdValue selects
+         , ghcOpts = get rGhcOpts (rdValue { rGhcOpts = versionMacro : rGhcOpts rdValue}) selects
+         , extraLibraries = get rExtraLibraries rdValue selects
+         , tools = get rTools rdValue selects
+                              }
+      }
+  else
+    return Nothing
+ where
     toToolName (Cabal.ExeDependency pkg exe _) =
       ToolName (pkgNameToString pkg) (Cabal.unUnqualComponentName exe)
+
+    convert :: v -> IO RuleData
+    convert compVar = do
+      let mods = map dropExtension $ modules compVar
+          bi = compVar ^. BL.buildInfo
+          attrName = ruleName pkgId compVar
+          componentDepNames = depPackageNames bi
+
+      srcs <- getSources bi cabalFilePath attrName mods
+      return $ RuleData
+        {
+        rDeps = componentDepNames
+        , rGhcOpts = optionsFromBuildInfo bi
+        , rExtraLibraries = Cabal.extraLibs bi
+        , rTools = map toToolName $ Cabal.buildToolDepends bi
+        , rSrcs = srcs
+        , rHiddenModules = hiddenMods compVar
+        }
+
+    get :: (Eq a, Monoid a) => (RuleData -> a) -> RuleData -> [Configurable RuleData] -> [Configurable a]
+    get getter rdValue selects = [
+      s | select <- Value (getter rdValue) : ((getter <$>) <$> selects),
+        let s = simplifySelect select,
+        s /= Value mempty ]
+
+    simplifySelect :: Eq a => Configurable a -> Configurable a
+    -- if all branches map to the same value, we can simplify
+    simplifySelect select@(Select m (Just e))
+      | all (e ==) (Map.elems m) = Value e
+      | otherwise = select
+    simplifySelect a = a
+
+    dnfToSelect :: (DNF, RuleData, Maybe RuleData) -> (Configurable RuleData, [ConfigSettingGroup])
+    dnfToSelect (DnfFalse, _, falseVal) = (Value $ fromMaybe mempty falseVal, [])
+    dnfToSelect (DnfTrue, trueVal, _) = (Value trueVal, [])
+    dnfToSelect (Disj cs, trueVal, falseVal)
+      -- Case 1: True and false branches are equal
+      | Just trueVal == falseVal = (Value trueVal, [])
+
+      -- Case 2: Simple OR of single variables (a || b || c)
+      | all isSinglePosVar cs
+      = let vars = Set.fromList $ mapMaybe extractSinglePosVar $ Set.toList cs
+            defaultVal = fromMaybe mempty falseVal
+        in (Select (Map.fromSet (const trueVal) vars) (Just defaultVal), [])
+
+      -- Case 3: All conjunctions share a common negated variable (!x && a) || (!x && b)
+      -- This can be rewritten as: if x then default else (a || b)
+      | Just negVar <- findCommonNegation cs
+      = let otherTerms = Set.unions $ Set.map (deleteCommonNeg negVar) cs
+        in if all (not . isNegTerm) otherTerms
+           then let defaultMap = maybe Map.empty (Map.singleton negVar) falseVal
+                    otherVars = Set.map termVar otherTerms
+                in (Select (defaultMap `Map.union` Map.fromSet (const trueVal) otherVars)
+                          (Just $ fromMaybe mempty falseVal), [])
+           else unsupported
+
+      -- Case 4: Conjunctions with only positive variables (a && b) || (c && d)
+      -- Use config_setting_group for AND chaining
+      | all onlyPosVars cs
+      = let (selectMap, groups) = buildConfigGroups cs trueVal falseVal
+        in (Select selectMap (Just $ fromMaybe mempty falseVal), groups)
+
+      -- Case 5: Complex condition not yet implemented
+      | otherwise = unsupported
+      where
+        unsupported = (traceShow cs $ Select (Map.singleton "not-implemented" trueVal) falseVal, [])
+
+        isSinglePosVar (Conj ts)
+          | Set.size ts == 1
+          , SinglePosVarTerm _ _ <- Set.elemAt 0 ts = True
+          | otherwise = False
+
+        onlyPosVars (Conj ts) = all (not . isNegTerm) $ Set.toList ts
+
+        -- Extract variable name from a single positive variable conjunction
+        extractSinglePosVar (SinglePosVar v) = Just v
+        extractSinglePosVar _ = Nothing
+
+        -- Build config_setting_groups for AND-ed conditions
+        buildConfigGroups conjs trueV _falseV =
+          let mkGroup (Conj ts) =
+                let terms = Set.toList ts
+                    vars = map termVar terms
+                    shortNames = map termShortName terms
+                    -- Create name from short names joined with "_and_"
+                    groupName = ":" ++ intercalate "_and_" shortNames
+                in (groupName, ConfigSettingGroup groupName vars)
+              groupsWithNames = map mkGroup $ Set.toList conjs
+              selectMap = Map.fromList [(name, trueV) | (name, _) <- groupsWithNames]
+              groups = map snd groupsWithNames
+          in (selectMap, groups)
+
+        -- Find a negated variable that appears in all conjunctions
+        findCommonNegation conjs
+          | Set.size commonTerms == 1
+          , NotT (VarT lbl _) <- Set.elemAt 0 commonTerms
+          , all ((== 2) . conjSize) conjs
+          = Just lbl
+          | otherwise = Nothing
+          where
+            commonTerms = foldl1 Set.intersection (Set.map getConjTerms conjs)
+            conjSize (Conj ts) = Set.size ts
+
+        getConjTerms (Conj ts) = ts
+
+        deleteCommonNeg v (Conj ts) = Set.filter (\t -> termVar t /= v) ts
+
+    handleNode :: v -> [Cabal.Dependency] -> [CondBranch ConfVar [Cabal.Dependency] v] -> IO RuleDataCond
+    handleNode compVar _dependencies branchList = do
+      rd <- convert compVar
+      bs <- traverse (handleBranch compVar) branchList
+
+      return $ RuleDataCond rd (foldr combineBranches [] bs)
+
+    combineBranches :: RuleDataBranch -> [(DNF, RuleData, Maybe RuleData)] -> [(DNF, RuleData, Maybe RuleData)]
+    combineBranches RuleDataBranch{..} acc =
+      let trueBranches = map (\(cond, val, mval) -> (dnfAnd rdCond cond, val, mval)) (rdBranches rdTrue)
+          falseBranches = case rdFalse of
+            Nothing -> []
+            Just falseCond -> map (\(cond, val, mval) -> (dnfAnd (negateDNF rdCond) cond, val, mval)) (rdBranches falseCond)
+          currentBranch = (rdCond, rdValue rdTrue, rdValue <$> rdFalse)
+      in currentBranch : trueBranches ++ falseBranches ++ acc
+
+    addSourceDirs :: v -> v -> v
+    addSourceDirs v = BL.hsSourceDirs %~ (<> (v ^. BL.hsSourceDirs))
+
+    goNext v (CondNode compVar depList branchList) =
+      handleNode (addSourceDirs v compVar) depList branchList
+
+    -- CondBranch condition (CondTree x) (Maybe  CondTree y)
+    handleBranch :: v -> CondBranch ConfVar [Cabal.Dependency] v -> IO RuleDataBranch
+    handleBranch compVar (CondBranch cond ifTrue maybeIfFalse) = do
+      let condAsDNF = dnf cond
+      trueBranch <- goNext compVar ifTrue
+      falseBranch <- traverse (goNext compVar) maybeIfFalse
+
+      return $ RuleDataBranch condAsDNF trueBranch falseBranch
 
     underscorify '-' = '_'
     underscorify c = c
@@ -311,13 +484,13 @@ data MissingModuleFile = MissingModuleFile
 --
 findModulesPaths
   :: String -> FilePath -> [FilePath] -> [FilePath] -> IO [FilePath]
-findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames = do
+findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames =
   concat <$> traverse findModules moduleNames
   where
     cabalDir = Path.takeDirectory cabalFilePath
     findModules :: FilePath -> IO [FilePath]
     findModules modulePath = do
-      let raiseError = throwIO $ MissingModuleFile
+      let raiseError = throwIO $ traceStack "missing module file" $ MissingModuleFile
             { modulePath = modulePath
             , cabalFile = cabalFilePath
             , componentName = componentName
@@ -326,11 +499,9 @@ findModulesPaths componentName cabalFilePath hsSourceDirs moduleNames = do
         [] -> raiseError
         foundModulePaths -> pure foundModulePaths
 
-depPackageNames :: Cabal.BuildInfo -> [String]
-depPackageNames = concatMap depNames . Cabal.targetBuildDepends
-    where
-      depNames :: Cabal.Dependency -> [String]
-      depNames dep =
+
+depNames :: Cabal.Dependency -> [String]
+depNames dep =
         let
           pkgName :: String
           pkgName = pkgNameToString $ Cabal.depPkgName dep
@@ -339,6 +510,9 @@ depPackageNames = concatMap depNames . Cabal.targetBuildDepends
           identifierOf _ = pkgName
         in
           map identifierOf $ Set.toList $ Cabal.depLibraries dep
+
+depPackageNames :: Cabal.BuildInfo -> [String]
+depPackageNames = concatMap depNames . Cabal.targetBuildDepends
 
 -- | @findModulePaths parentDir hsSourceDirs modulePath@ finds
 -- the paths of the module, relative to @hsSourceDirs@.
@@ -386,36 +560,7 @@ data UnresolvedCabalDependencies = UnresolvedCabalDependencies
   }
   deriving (Show, Exception)
 
-readCabalFile :: FilePath -> IO Cabal.PackageDescription
+readCabalFile :: FilePath -> IO Cabal.GenericPackageDescription
 readCabalFile cabalFilePath = do
   let cabalFile = cabalFilePath
-  genericPkg <- Cabal.readGenericPackageDescription Cabal.silent cabalFile
-  let flags = mempty
-      componentSpec = Cabal.ComponentRequestedSpec
-        { Cabal.testsRequested = True
-        , Cabal.benchmarksRequested = True
-        }
-      satisfiableDep = const True
-      platform = Cabal.Platform Cabal.buildArch Cabal.buildOS
-      ghcVersion = Cabal.mkVersion
-        [ div __GLASGOW_HASKELL__ 100
-        , mod __GLASGOW_HASKELL__ 10
-        , __GLASGOW_HASKELL_PATCHLEVEL1__
-        ]
-      compilerInfo =
-        Cabal.unknownCompilerInfo
-          (Cabal.CompilerId Cabal.GHC ghcVersion)
-          Cabal.NoAbiTag
-  case Cabal.finalizePD
-         flags
-         componentSpec
-         satisfiableDep
-         platform
-         compilerInfo
-         []
-         genericPkg of
-    Left unresolvedDeps -> throwIO $ UnresolvedCabalDependencies
-      { cabalFile
-      , unresolvedDependencies = unresolvedDeps
-      }
-    Right (pd, _) -> return pd
+  Cabal.readGenericPackageDescription Cabal.silent cabalFile
