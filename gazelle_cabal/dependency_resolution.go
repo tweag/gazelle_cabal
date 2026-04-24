@@ -354,7 +354,15 @@ func appendExtraLibrariesToDeps(extraLibraries ConfigurableList[label.Label], de
 		case label.Label:
 			deps.AddItem(v.String())
 		case map[string][]label.Label:
-			log.Println("TODO (not implemented) " + fmt.Sprint(v))
+			selectDeps := make(rule.SelectStringListValue, len(v))
+			for condition, labels := range v {
+				stringLabels := make([]string, 0, len(labels))
+				for _, lbl := range labels {
+					stringLabels = append(stringLabels, lbl.String())
+				}
+				selectDeps[condition] = stringLabels
+			}
+			*deps = append(*deps, selectDeps)
 		}
 	}
 }
