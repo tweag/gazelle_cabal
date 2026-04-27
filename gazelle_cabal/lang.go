@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -161,6 +162,11 @@ func (*gazelleCabalLang) Resolve(c *config.Config, ix *resolve.RuleIndex, rc *re
 	toolRepo := packageRepo + "-exe"
 	if imports != nil {
 		importData := imports.(ImportData)
+		
+		// Consolidate all ImportData fields to avoid duplicate selects
+		importData.Deps = consolidateConfigurableList(importData.Deps)
+		importData.GhcOpts = consolidateConfigurableList(importData.GhcOpts)
+		importData.ExtraLibraries = consolidateConfigurableList(importData.ExtraLibraries)
 
 		libraryLabels, unresolvedExtraLibraries := getExtraLibraryLabels(c, importData.ExtraLibraries)
 		setDepsAndPluginsAttributes(libraryLabels, packageRepo, ix, r, importData, from)
@@ -313,9 +319,10 @@ func infoToRules(repoRoot string, flags []Flag, ruleInfos []RuleInfo, configGrou
 	// Generate rules for each component
 	for _, ruleInfo := range ruleInfos {
 		r := rule.NewRule(ruleInfo.Kind, ruleInfo.Name)
-		r.SetAttr("srcs", ruleInfo.Srcs)
+
+		r.SetAttr("srcs", consolidateConfigurableList(ruleInfo.Srcs))
 		if ruleInfo.HiddenModules != nil {
-			r.SetAttr("hidden_modules", ruleInfo.HiddenModules)
+			r.SetAttr("hidden_modules", consolidateConfigurableList(ruleInfo.HiddenModules))
 		}
 		for k, v := range ruleInfo.Attrs {
 			r.SetAttr(k, v)
@@ -694,4 +701,292 @@ func hasRuleInfo(ruleInfos []RuleInfo, kind string, name string) bool {
 		}
 	}
 	return false
+}
+
+// consolidateConfigurableList merges ConfigurableList items to avoid duplicates
+// It combines values under identical condition keys across multiple selects,
+// but splits selects to avoid ambiguous matches when the same value appears in multiple conditions.
+// Values in the plain list are removed from all select conditions to avoid duplication.
+// This preserves Bazel's select semantics where conditions must not be ambiguous.
+func consolidateConfigurableList(cl ConfigurableList[string]) ConfigurableList[string] {
+	if len(cl) == 0 {
+		return cl
+	}
+
+	// Separate plain values from selects
+	var plainValues []string
+	var selects []rule.SelectStringListValue
+
+	for _, item := range cl {
+		switch v := item.(type) {
+		case []string:
+			plainValues = append(plainValues, v...)
+		case map[string][]string:
+			// Convert to SelectStringListValue
+			selectVal := make(rule.SelectStringListValue)
+			for k, vals := range v {
+				selectVal[k] = vals
+			}
+			selects = append(selects, selectVal)
+		case rule.SelectStringListValue:
+			selects = append(selects, v)
+		}
+	}
+
+	// Build result
+	result := make(ConfigurableList[string], 0, len(selects)+1)
+	
+	// Deduplicate plain values
+	plainValuesDedup := deduplicateStrings(plainValues)
+	
+	// Create a set of plain values for fast lookup
+	plainValuesSet := make(map[string]bool, len(plainValuesDedup))
+	for _, v := range plainValuesDedup {
+		plainValuesSet[v] = true
+	}
+	
+	// Add deduplicated plain values first
+	if len(plainValuesDedup) > 0 {
+		result = append(result, plainValuesDedup)
+	}
+	
+	// Merge all selects into a single select first
+	if len(selects) > 0 {
+		// Check if all selects have identical conditions (not just values)
+		canMerge := true
+		if len(selects) > 1 {
+			var firstConditions []string
+			for i, sel := range selects {
+				var conditions []string
+				for condition := range sel {
+					conditions = append(conditions, condition)
+				}
+				sort.Strings(conditions)
+				if i == 0 {
+					firstConditions = conditions
+				} else {
+					if len(conditions) != len(firstConditions) {
+						canMerge = false
+						break
+					}
+					for j, cond := range conditions {
+						if cond != firstConditions[j] {
+							canMerge = false
+							break
+						}
+					}
+					if !canMerge {
+						break
+					}
+				}
+			}
+		}
+		
+		if !canMerge {
+			// Cannot safely merge - keep as separate selects to avoid ambiguous matches
+			for _, sel := range selects {
+				newSelect := make(rule.SelectStringListValue)
+				for condition, vals := range sel {
+					// Filter out values that are in plain list
+					filtered := make([]string, 0, len(vals))
+					for _, v := range vals {
+						if !plainValuesSet[v] {
+							filtered = append(filtered, v)
+						}
+					}
+					// Deduplicate
+					filtered = deduplicateStrings(filtered)
+					newSelect[condition] = filtered
+				}
+				// Ensure default is present
+				if _, exists := newSelect["//conditions:default"]; !exists {
+					newSelect["//conditions:default"] = []string{}
+				}
+				// Only add if there are non-default conditions with values
+				hasNonDefaultValues := false
+				for condition, vals := range newSelect {
+					if condition != "//conditions:default" && len(vals) > 0 {
+						hasNonDefaultValues = true
+						break
+					}
+				}
+				if hasNonDefaultValues {
+					result = append(result, newSelect)
+				}
+			}
+			return result
+		}
+		
+		// Safe to merge - all selects have identical conditions
+		mergedSelect := make(rule.SelectStringListValue)
+		
+		for _, sel := range selects {
+			for condition, vals := range sel {
+				mergedSelect[condition] = append(mergedSelect[condition], vals...)
+			}
+		}
+		
+		// Deduplicate values within each condition and remove values that are in plain list
+		for condition, vals := range mergedSelect {
+			deduped := deduplicateStrings(vals)
+			filtered := make([]string, 0, len(deduped))
+			for _, v := range deduped {
+				if !plainValuesSet[v] {
+					filtered = append(filtered, v)
+				}
+			}
+			mergedSelect[condition] = filtered
+		}
+		
+		// Remove empty conditions (but keep track of default)
+		defaultVals, hasDefault := mergedSelect["//conditions:default"]
+		for condition, vals := range mergedSelect {
+			if len(vals) == 0 && condition != "//conditions:default" {
+				delete(mergedSelect, condition)
+			}
+		}
+		
+		// Now split the select by shared values to avoid ambiguous matches
+		// For each value, find all conditions that include it and create a separate select
+		valueToConditions := make(map[string][]string)
+		for condition, vals := range mergedSelect {
+			for _, v := range vals {
+				valueToConditions[v] = append(valueToConditions[v], condition)
+			}
+		}
+		
+		// Group values by their condition sets (values with same conditions go together)
+		type conditionSet struct {
+			conditions []string
+			values     []string
+		}
+		conditionSets := make(map[string]*conditionSet)
+		
+		for value, conditions := range valueToConditions {
+			sort.Strings(conditions)
+			key := strings.Join(conditions, "|")
+			if cs, exists := conditionSets[key]; exists {
+				cs.values = append(cs.values, value)
+			} else {
+				conditionSets[key] = &conditionSet{
+					conditions: conditions,
+					values:     []string{value},
+				}
+			}
+		}
+		
+		// Check if we need to split: only split if there are overlapping conditions
+		// Overlapping means a condition appears in multiple condition sets
+		conditionCounts := make(map[string]int)
+		for _, cs := range conditionSets {
+			for _, cond := range cs.conditions {
+				conditionCounts[cond]++
+			}
+		}
+		
+		hasOverlap := false
+		for _, count := range conditionCounts {
+			if count > 1 {
+				hasOverlap = true
+				break
+			}
+		}
+		
+		if hasOverlap {
+			// Split: create a separate select for each condition set
+			for _, cs := range conditionSets {
+				newSelect := make(rule.SelectStringListValue)
+				for _, condition := range cs.conditions {
+					newSelect[condition] = append([]string{}, cs.values...)
+				}
+				// Add empty default condition if not already present
+				if _, hasDefault := newSelect["//conditions:default"]; !hasDefault {
+					newSelect["//conditions:default"] = []string{}
+				}
+				result = append(result, newSelect)
+			}
+		} else {
+			// No overlap: keep as single select (more compact)
+			if len(mergedSelect) > 0 {
+				// Ensure default is present (use existing or add empty)
+				if _, exists := mergedSelect["//conditions:default"]; !exists {
+					if hasDefault {
+						mergedSelect["//conditions:default"] = defaultVals
+					} else {
+						mergedSelect["//conditions:default"] = []string{}
+					}
+				}
+				result = append(result, mergedSelect)
+			}
+		}
+	}
+
+	return result
+}
+
+// deduplicateStrings removes duplicate strings while preserving order
+func deduplicateStrings(slice []string) []string {
+	seen := make(map[string]bool, len(slice))
+	result := make([]string, 0, len(slice))
+	
+	for _, item := range slice {
+		if !seen[item] {
+			seen[item] = true
+			result = append(result, item)
+		}
+	}
+	
+	return result
+}
+
+// generatePathsModuleContentLines generates the content for an autogenerated Paths_ module as an array of lines
+func generatePathsModuleContentLines(moduleName string, version string) []string {
+	return []string{
+		fmt.Sprintf("module %s where", moduleName),
+		" ",
+		"import Data.Version (Version, makeVersion)",
+		" ",
+		"version :: Version",
+		fmt.Sprintf("version = makeVersion [%s]", convertVersionToList(version)),
+	}
+}
+
+// convertVersionToList converts a version string like "1.0.2.0" to "1, 0, 2, 0"
+func convertVersionToList(version string) string {
+	// Simple conversion: replace dots with ", "
+	result := ""
+	for i, c := range version {
+		if c == '.' {
+			result += ", "
+		} else {
+			result += string(c)
+		}
+		if i == len(version)-1 {
+			break
+		}
+	}
+	return result
+}
+
+// prependToConfigurableList prepends a value to a ConfigurableList
+func prependToConfigurableList(list ConfigurableList[string], value string) ConfigurableList[string] {
+	newList := make(ConfigurableList[string], len(list))
+	for i, item := range list {
+		switch v := item.(type) {
+		case []string:
+			// For plain slice, prepend value
+			newList[i] = append([]string{value}, v...)
+		case map[string][]string:
+			// For select/map, prepend to each conditional value
+			newConditionals := make(map[string][]string)
+			for k, vals := range v {
+				newConditionals[k] = append([]string{value}, vals...)
+			}
+			newList[i] = newConditionals
+		default:
+			// Keep as is if unexpected type
+			newList[i] = item
+		}
+	}
+	return newList
 }
