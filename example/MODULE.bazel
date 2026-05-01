@@ -84,7 +84,7 @@ archive_override(
 bazel_dep(name = "rules_nixpkgs_core")
 bazel_dep(name = "rules_nixpkgs_cc")
 bazel_dep(name = "rules_nixpkgs_posix")
-bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.18")
 
 # TODO Remove once rules_nixpkgs is in the BCR.
