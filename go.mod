@@ -3,9 +3,11 @@ module github.com/tweag/gazelle_cabal
 go 1.24.12
 
 require (
-	github.com/bazelbuild/bazel-gazelle v0.50.0
+	github.com/bazelbuild/bazel-gazelle v0.51.3
 	github.com/bazelbuild/rules_go v0.60.0
 )
+
+require github.com/bazel-contrib/bazel-gazelle/v2 v2.0.0-2 // indirect
 
 require (
 	github.com/bazelbuild/buildtools v0.0.0-20250930140053-2eb4fccefb52
