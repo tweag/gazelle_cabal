@@ -56,15 +56,15 @@ jobs:
 
           bzlmod_setting=
           if [[ ${{ matrix.enable-bzlmod }} = true ]]; then
-            bzlmod_setting="common --config=bzlmod"
             # Update the GHC_VERSION in MODULE.bazel
             sed -i.bak 's/^GHC_VERSION = .*$/GHC_VERSION = "'"$GHC_VERSION"'"/g' example/MODULE.bazel
           fi
 
-          cat >>.bazelrc.local <<EOF
+          cat >>.bazelrc.local <<'EOF'
           build --config=remote-cache
+          build --config=${{ matrix.ghc-version }}
           build --repository_cache=~/repo-cache/
-          $bzlmod_setting
+          common --enable_bzlmod=${{ matrix.enable-bzlmod }}
           EOF
           ln -s ../.bazelrc.local example/.bazelrc.local
           ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
@@ -73,15 +73,15 @@ jobs:
         if: ${{ !matrix.enable-bzlmod || matrix.ghc-version == 'ghc_9_4_8' }}
         uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
-          run: bazel test --config=${{ matrix.ghc-version }} --test_output=all //...
+          run: bazel test --test_output=all //...
       - name: Test the example
         run: |
           cd example
-          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }}'
+          nix-shell --pure --run 'bazel run //:gazelle'
           # Gazelle doesn't remove rules by default
           grep -q another-haskell-binary package-a/BUILD.bazel
-          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }} -- fix -mode diff' || true
-          nix-shell --pure --run 'bazel run //:gazelle --config=${{ matrix.ghc-version }} -- fix'
+          nix-shell --pure --run 'bazel run //:gazelle -- fix -mode diff' || true
+          nix-shell --pure --run 'bazel run //:gazelle -- fix'
           # Test that fix kept and removed the expected rules
           echo "! grep -q another-haskell-binary package-a/BUILD.bazel"
           bash -c "! grep -q another-haskell-binary package-a/BUILD.bazel"
@@ -127,17 +127,23 @@ jobs:
           bash -cx "grep -q \":mtl\" package-b/BUILD.bazel"
           bash -cx "grep -q \"//package-c:mtl\" package-b/BUILD.bazel"
           # Test gazelle-update-repos
-          nix-shell --pure --run 'bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}'
-          nix-shell --pure --run 'bazel test //... --config=${{ matrix.ghc-version }}'
+          nix-shell --pure --run 'bazel run //:gazelle-update-repos'
+          nix-shell --pure --run 'bazel test //...'
+      - name: Check if package-d flags work
+        uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
+        with:
+          working-directory: example
+          run: |
+            package-d/test_flags.sh
       - name: Test alternative dependencies
         if: ${{ !matrix.enable-bzlmod }}
         uses: tweag/run-nix-shell@5d825ec7e0038b6c613f14d523203a2ea49abddb # v0.3.0
         with:
           working-directory: tests/alternative-deps
           run: |
-            bazel run //:gazelle --config=${{ matrix.ghc-version }}
-            bazel run //:gazelle-update-repos --config=${{ matrix.ghc-version }}
-            bazel test //... --config=${{ matrix.ghc-version }}
+            bazel run //:gazelle
+            bazel run //:gazelle-update-repos
+            bazel test //...
       - name: Test for buildifier suggestions
         # only for GHC 9.4.8 with bzlmod
         if: ${{ !matrix.enable-bzlmod || matrix.ghc-version == 'ghc_9_4_8' }}

@@ -55,6 +55,7 @@ haskell_binary(
 
 haskell_test(
     name = "tasty",
+    timeout = "short",
     srcs = glob(["tests/**/*.hs"]),
     ghcopts = [
         "-Wall",
@@ -67,6 +68,7 @@ haskell_test(
     deps = [
         ":base",
         ":cabalscan-library",
+        ":containers",
         ":directory",
         ":filepath",
         "@stackage//:hspec",
