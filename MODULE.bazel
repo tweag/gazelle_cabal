@@ -3,7 +3,9 @@ module(
     version = "0.0.0",
 )
 
-bazel_dep(name = "rules_haskell", version = "0.19")
+RULES_HASKELL_VER = "0.19"
+
+bazel_dep(name = "rules_haskell", version = RULES_HASKELL_VER)
 
 stack_snapshot = use_extension(
     "@rules_haskell//extensions:stack_snapshot.bzl",
@@ -42,7 +44,9 @@ use_repo(go_deps, "com_github_bazelbuild_buildtools")
 
 ##### dev dependencies
 
-bazel_dep(name = "rules_nixpkgs_core", version = "0.13.0", dev_dependency = True)
+RULES_NIXPKGS_VER = "0.13.0"
+
+bazel_dep(name = "rules_nixpkgs_core", version = RULES_NIXPKGS_VER, dev_dependency = True)
 
 nix_repo = use_extension(
     "@rules_nixpkgs_core//extensions:repository.bzl",
@@ -72,8 +76,6 @@ filegroup(
 )
 use_repo(nix_pkg, "buildifier")
 
-# TODO Remove once rules_haskell_nix is in the BCR.
-
 bazel_dep(name = "rules_haskell_nix", dev_dependency = True)
 
 # Needed for custom toolchain definitions
@@ -81,33 +83,31 @@ bazel_dep(name = "rules_haskell_nix", dev_dependency = True)
 bazel_dep(name = "rules_nixpkgs_cc", dev_dependency = True)
 bazel_dep(name = "rules_nixpkgs_posix", dev_dependency = True)
 
-RULES_HASKELL_REV = "0.18"
+# TODO Remove once rules_haskell_nix is in the BCR.
 
-RULES_HASKELL_INTEGRITY = "sha256-0fDhvU8dXiSLKIK/3HwxoUYRL52FudLw73fnjQLsukU="
+RULES_HASKELL_INTEGRITY = "sha256-NHQoSKiILZSgQ3s7GRfepvWMgv5XYq/o0knTo25Rk10="
 
 archive_override(
     module_name = "rules_haskell_nix",
     integrity = RULES_HASKELL_INTEGRITY,
-    strip_prefix = "rules_haskell-%s/rules_haskell_nix" % RULES_HASKELL_REV,
-    urls = ["https://github.com/tweag/rules_haskell/releases/download/v{REV}/rules_haskell-{REV}.tar.gz".format(REV = RULES_HASKELL_REV)],
+    strip_prefix = "rules_haskell-%s/rules_haskell_nix" % RULES_HASKELL_VER,
+    urls = ["https://github.com/tweag/rules_haskell/releases/download/v{VER}/rules_haskell-{VER}.tar.gz".format(VER = RULES_HASKELL_VER)],
 )
-
-RULES_NIXPKGS_REV = "0.13.0"
 
 RULES_NIXPKGS_INTEGRITY = "sha256-MCcfe9OA5OIOTXEywySUbE/bwx6+C7tmOKD2GjfnQ5c="
 
 archive_override(
     module_name = "rules_nixpkgs_cc",
     integrity = RULES_NIXPKGS_INTEGRITY,
-    strip_prefix = "rules_nixpkgs-%s/toolchains/cc" % RULES_NIXPKGS_REV,
-    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v{REV}/rules_nixpkgs-{REV}.tar.gz".format(REV = RULES_NIXPKGS_REV)],
+    strip_prefix = "rules_nixpkgs-%s/toolchains/cc" % RULES_NIXPKGS_VER,
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v{VER}/rules_nixpkgs-{VER}.tar.gz".format(VER = RULES_NIXPKGS_VER)],
 )
 
 archive_override(
     module_name = "rules_nixpkgs_posix",
     integrity = RULES_NIXPKGS_INTEGRITY,
-    strip_prefix = "rules_nixpkgs-%s/toolchains/posix" % RULES_NIXPKGS_REV,
-    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v{REV}/rules_nixpkgs-{REV}.tar.gz".format(REV = RULES_NIXPKGS_REV)],
+    strip_prefix = "rules_nixpkgs-%s/toolchains/posix" % RULES_NIXPKGS_VER,
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v{VER}/rules_nixpkgs-{VER}.tar.gz".format(VER = RULES_NIXPKGS_VER)],
 )
 
 declare_nix_toolchains = use_extension(
