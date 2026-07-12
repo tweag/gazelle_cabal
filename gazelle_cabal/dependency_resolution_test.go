@@ -141,6 +141,27 @@ func TestMapSortedStringKeys(t *testing.T) {
 		t.Errorf("got %v, wanted %v", got, wanted)
 	}
 
+	m = map[string]bool{"a": true, "b": false, "b-.1.02": false}
+	got = mapSortedStringKeys(m)
+	wanted = []string{"a", "b", "b-.1.02"}
+	if !reflect.DeepEqual(got, wanted) {
+		t.Errorf("got %v, wanted %v", got, wanted)
+	}
+
+	m = map[string]bool{"a": true, "b": false, "b-1.02.": false}
+	got = mapSortedStringKeys(m)
+	wanted = []string{"a", "b", "b-1.02."}
+	if !reflect.DeepEqual(got, wanted) {
+		t.Errorf("got %v, wanted %v", got, wanted)
+	}
+
+	m = map[string]bool{"a": true, "b": false, "b-1.02": false}
+	got = mapSortedStringKeys(m)
+	wanted = []string{"a", "b-1.02"}
+	if !reflect.DeepEqual(got, wanted) {
+		t.Errorf("got %v, wanted %v", got, wanted)
+	}
+
 	m = map[string]bool{}
 	got = mapSortedStringKeys(m)
 	wanted = []string{}
