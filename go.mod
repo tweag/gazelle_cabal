@@ -3,7 +3,7 @@ module github.com/tweag/gazelle_cabal
 go 1.24.12
 
 require (
-	github.com/bazelbuild/bazel-gazelle v0.50.0
+	github.com/bazelbuild/bazel-gazelle v0.52.2
 	github.com/bazelbuild/rules_go v0.60.0
 )
 
