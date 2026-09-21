@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"regexp"
 
 	"github.com/bazelbuild/bazel-gazelle/config"
 	"github.com/bazelbuild/bazel-gazelle/label"
@@ -155,7 +156,7 @@ func rel(lbl label.Label, from label.Label) label.Label {
 // haskell_library are assumed to be local. There rest of the
 // dependencies are assumed to come from packageRepo.
 func setDepsAndPluginsAttributes(
-    extraLibraries []label.Label,
+	extraLibraries []label.Label,
 	packageRepo string,
 	ix *resolve.RuleIndex,
 	r *rule.Rule,
@@ -253,7 +254,7 @@ func getRuleIndexKeys(depName string, from label.Label, cabalPkgName string) []s
 	// colon prefix detected
 	packagePrefix := splitted[0]
 	libraryName := splitted[1]
-	if (packagePrefix == cabalPkgName) {
+	if packagePrefix == cabalPkgName {
 		// the package prefix leads to a sub-library of the same package
 		return []string{
 			fmt.Sprintf(format, privatePrefix, packagePrefix, libraryName),
@@ -407,8 +408,61 @@ func mapSortedStringKeys(m map[string]bool) []string {
 		ss[i] = s
 		i++
 	}
+	return listSortedStringKeys(ss)
+}
+
+func listSortedStringKeys(ss []string) []string {
 	sort.Strings(ss)
-	return ss
+	s_result := removeEquivalent(samePackage, ss)
+	return s_result
+}
+
+// This function assumes that equivalent elements are bundled.
+// Hence, the input list should be preprocessed with a function ensuring this property.
+//
+// In our use-case, it means that
+// the input list must be sorted.
+//
+// This function is only keeping the last representative of the equivalence class.
+// The rationale is it is used to deal with packages having or not a version number,
+// and in case both option are available, the version  number should be kept.
+func removeEquivalent(equiv func(string, string) bool, s []string) []string {
+	if len(s) < 1 {
+		return s
+	}
+
+	first_free_position := 1
+	for curr := 1; curr < len(s); curr++ {
+		if equiv(s[first_free_position-1], s[curr]) {
+			s[first_free_position-1] = s[curr]
+		} else {
+			s[first_free_position] = s[curr]
+			first_free_position++
+		}
+	}
+
+	return s[:first_free_position]
+}
+
+// The same package should not appear twice in a 'stack_snapshot' rule.
+// See https://github.com/tweag/gazelle_cabal/issue/46
+func samePackage(s1 string, s2 string) bool {
+	ss1 := chopVersionNumber(s1)
+	ss2 := chopVersionNumber(s2)
+	return ss1 == ss2
+}
+
+// Strips a suffix "-digit+[.digit+]*" from the given string if present.
+// Otherwise returns the string unmodified.
+var chopVersionNumberRegexp, _ = regexp.Compile(`-[0-9]+(\.[0-9]+)*$`)
+
+func chopVersionNumber(s string) string {
+	loc := chopVersionNumberRegexp.FindStringIndex(s)
+	if loc == nil {
+		return s
+	} else {
+		return s[:loc[0]]
+	}
 }
 
 // label.Parse chokes on hyphenated repo names with
