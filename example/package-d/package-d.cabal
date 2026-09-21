@@ -1,0 +1,80 @@
+cabal-version:      3.0
+name:               package-d
+version:            0.1.0.0
+
+author:             Example Author
+maintainer:         example@example.com
+
+flag network-support
+    description: Enable network functionality
+    default: True
+    manual: True
+
+flag experimental
+    description: Enable experimental features
+    default: False
+    manual: True
+
+flag database
+    description: Enable database support
+    default: False
+    manual: True
+
+library
+    exposed-modules:
+      PackageD.Core
+    other-modules:
+      PackageD.Internal.Base
+    build-depends:
+      base >=4.12 && <5
+    
+    if flag(network-support)
+      exposed-modules:
+        PackageD.Network
+      build-depends:
+        network
+      other-modules:
+        PackageD.Internal.NetworkImpl
+    
+    if flag(experimental)
+      exposed-modules:
+        PackageD.Experimental
+      build-depends:
+        text
+    
+    if flag(database)
+      exposed-modules:
+        PackageD.Database
+      build-depends:
+        direct-sqlite
+      other-modules:
+        PackageD.Internal.DatabaseImpl
+    
+    -- Multiple flags combined
+    if flag(network-support) && flag(database)
+      exposed-modules:
+        PackageD.NetworkDatabase
+    
+    ghc-options: -Wall
+    hs-source-dirs: src
+    default-language: Haskell2010
+
+executable package-d-cli
+    main-is: Main.hs
+    build-depends:
+      base,
+      package-d
+    
+    if flag(network-support)
+      cpp-options: -DNETWORK_SUPPORT
+      build-depends:
+        optparse-applicative
+    
+    if flag(database)
+      cpp-options: -DDATABASE_SUPPORT
+
+    if flag(network-support) && flag(database)
+      cpp-options: -DDATABASE_AND_NETWORK_SUPPORT
+
+    hs-source-dirs: app
+    default-language: Haskell2010
