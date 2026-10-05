@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/bazelbuild/buildtools v0.0.0-20250930140053-2eb4fccefb52
+	github.com/bazelbuild/buildtools v0.0.0-20260904073137-eaa4d125b423
 	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
 	golang.org/x/mod v0.25.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
