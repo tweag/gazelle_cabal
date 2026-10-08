@@ -20,9 +20,9 @@ http_archive(
 
 http_archive(
     name = "rules_nixpkgs_core",
-    sha256 = "fd79d6e81a2d9bce3cf91fab13308adf0be1959d6c676a17c709af98bca801e7",
-    strip_prefix = "rules_nixpkgs-0.14.0/core",
-    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.0/rules_nixpkgs-0.14.0.tar.gz"],
+    sha256 = "54025689367205b835198677e686d8208b570bfd84e6872684ae657747673b97",
+    strip_prefix = "rules_nixpkgs-0.14.1/core",
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
 )
 
 [
@@ -53,6 +53,14 @@ http_archive(
 load("@rules_haskell//haskell:repositories.bzl", "rules_haskell_dependencies")
 
 rules_haskell_dependencies()
+
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+maybe(
+    host_platform_repo,
+    "host_platform",
+)
 
 load("@rules_nixpkgs_core//:nixpkgs.bzl", "nixpkgs_local_repository", "nixpkgs_package")
 
