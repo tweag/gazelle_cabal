@@ -6,63 +6,81 @@ import (
 )
 
 func TestDropToolMacroDefs_OnlyRelevantMacrosAreDropped(t *testing.T) {
-	flags := []string{
+	flags := ConfigurableList[string]{[]string{
 		"-DTHE_PKG_THE_EXE_PATH=/pkg/exe",
 		"-f",
 		"-DTHE_PKG=/another",
 		"-DTHE_PKG_THE_EXE_PATH=/pkg/exe2/exe",
 		"-DTHE_PKG_THE_EXE_PATH=",
-	}
-	tools := []ToolName{ToolName{"the-pkg", "the-exe"}}
+	}}
+	tools := ConfigurableList[ToolName]{[]ToolName{{"the-pkg", "the-exe"}}}
 	wanted := []string{
 		"-f",
 		"-DTHE_PKG=/another",
 	}
-	got := make([]string, 0, len(flags))
-	dropToolMacroDefs(flags, tools, &got)
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %v, wanted %v", got, wanted)
+	got := dropToolMacroDefs(flags, tools)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 item in got, but got %d", len(got))
+	}
+	result, ok := got[0].([]string)
+	if !ok {
+		t.Fatalf("expected []string, got %T", got[0])
+	}
+	if !reflect.DeepEqual(result, wanted) {
+		t.Errorf("got %v, wanted %v", result, wanted)
 	}
 }
 
 func TestDropToolMacroDefs_KeepsEverythingIfNoTools(t *testing.T) {
-	flags := []string{
+	wanted := []string{
 		"-DTHE_PKG_THE_EXE_PATH=/pkg/exe",
 		"-f",
 		"-DTHE_PKG=/another",
 		"-DTHE_PKG_THE_EXE_PATH=/pkg/exe2/exe",
 		"-DTHE_PKG_THE_EXE_PATH=",
 	}
-	tools := []ToolName{}
-	wanted := flags
-	got := make([]string, 0, len(flags))
-	dropToolMacroDefs(flags, tools, &got)
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %v, wanted %v", got, wanted)
+	flags := ConfigurableList[string]{wanted}
+	tools := ConfigurableList[ToolName]{[]ToolName{}}
+	got := dropToolMacroDefs(flags, tools)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 item in got, but got %d", len(got))
+	}
+	result, ok := got[0].([]string)
+	if !ok {
+		t.Fatalf("expected []string, got %T", got[0])
+	}
+	if !reflect.DeepEqual(result, wanted) {
+		t.Errorf("got %v, wanted %v", result, wanted)
 	}
 }
 
 func TestDropToolMacroDefs_DropsMacrosForMultipleToos(t *testing.T) {
-	flags := []string{
+	flags := ConfigurableList[string]{[]string{
 		"-DTHE_PKG_THE_EXE_PATH=/pkg/exe",
 		"-f",
 		"-DTHE_PKG=/another",
 		"-DPKG2_EXE2_PATH=",
 		"-DTHE_PKG_THE_EXE_PATH=/pkg/exe2/exe",
 		"-DTHE_PKG_THE_EXE_PATH=",
-	}
-	tools := []ToolName{
-		ToolName{"the-pkg", "the-exe"},
-		ToolName{"pkg2", "exe2"},
-	}
+	}}
+	tools := ConfigurableList[ToolName]{[]ToolName{
+		{"the-pkg", "the-exe"},
+		{"pkg2", "exe2"},
+	}}
 	wanted := []string{
 		"-f",
 		"-DTHE_PKG=/another",
 	}
-	got := make([]string, 0, len(flags))
-	dropToolMacroDefs(flags, tools, &got)
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %v, wanted %v", got, wanted)
+	got := dropToolMacroDefs(flags, tools)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 item in got, but got %d", len(got))
+	}
+	result, ok := got[0].([]string)
+	if !ok {
+		t.Fatalf("expected []string, got %T", got[0])
+	}
+	if !reflect.DeepEqual(result, wanted) {
+		t.Errorf("got %v, wanted %v", result, wanted)
 	}
 }
 
@@ -83,20 +101,26 @@ func TestToolMacroName(t *testing.T) {
 
 func TestAddLibraryFlags(t *testing.T) {
 
-	libraries := []string{"m", "SDL"}
-	got := make([]string, 0, len(libraries))
-	addLibraryFlags(libraries, &got)
+	libraries := ConfigurableList[string]{[]string{"m", "SDL"}}
+	got := addLibraryFlags(libraries)
 	wanted := []string{"-lm", "-lSDL"}
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %v, wanted %v", got, wanted)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 items in got, but got %d (%v)", len(got), got)
+	}
+	result := []string{}
+	for _, item := range got {
+		if s, ok := item.([]string); ok {
+			result = append(result, s...)
+		}
+	}
+	if !reflect.DeepEqual(result, wanted) {
+		t.Errorf("got %v, wanted %v", result, wanted)
 	}
 
-	libraries = []string{}
-	got = make([]string, 0, len(libraries))
-	addLibraryFlags(libraries, &got)
-	wanted = []string{}
-	if !reflect.DeepEqual(got, wanted) {
-		t.Errorf("got %v, wanted %v", got, wanted)
+	libraries = ConfigurableList[string]{[]string{}}
+	got = addLibraryFlags(libraries)
+	if len(got) != 0 {
+		t.Errorf("expected 0 items in got, but got %d", len(got))
 	}
 }
 
@@ -195,13 +219,13 @@ func TestParseStackageExeLabel(t *testing.T) {
 func TestToolsToComponents(t *testing.T) {
 
 	tools := map[string]map[string]bool{
-		"tasty-discover": map[string]bool{"tasty-discover": false, "tasty": true},
-		"hsinspect":      map[string]bool{"hsinspect": false},
+		"tasty-discover": {"tasty-discover": false, "tasty": true},
+		"hsinspect":      {"hsinspect": false},
 	}
 	got := toolsToComponents(tools)
 	wanted := map[string][]string{
-		"tasty-discover": []string{"lib", "exe:tasty", "exe:tasty-discover"},
-		"hsinspect":      []string{"lib", "exe:hsinspect"},
+		"tasty-discover": {"lib", "exe:tasty", "exe:tasty-discover"},
+		"hsinspect":      {"lib", "exe:hsinspect"},
 	}
 	if !reflect.DeepEqual(got, wanted) {
 		t.Errorf("got %v, wanted %v", got, wanted)
