@@ -5,3 +5,7 @@
 bazel-*
 .bazelrc.local
 .bazelrc.auth
+
+# editor-related
+.vscode/
+
