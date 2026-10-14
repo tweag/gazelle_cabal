@@ -10,7 +10,7 @@ mkShell {
   BAZEL_USE_CPP_ONLY_TOOLCHAIN=1;
   
   buildInputs = [
-    bazel_6
+    bazel_7
     binutils
     cacert
     nix
