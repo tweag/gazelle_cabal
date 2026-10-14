@@ -1,3 +1,5 @@
+# Bazel 7 enables Bzlmod by default; keep it opt-in via --config=bzlmod.
+common --noenable_bzlmod
 
 build --host_platform=@rules_nixpkgs_core//platforms:host
 
