@@ -1,7 +1,0 @@
-resolver: lts-20.26
-
-packages:
-- git: https://github.com/tweag/cabal
-  commit: 42f04c3f639f10dc3c7981a0c663bfe08ad833cb
-  subdirs:
-  - Cabal
