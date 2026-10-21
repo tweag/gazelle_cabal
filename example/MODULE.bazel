@@ -89,29 +89,29 @@ bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.19")
 
 # TODO Remove once rules_nixpkgs is in the BCR.
-RULES_NIXPKGS_REV = "7e627d76ba65d6c42586fc265e46bd370672b4eb"
+RULES_NIXPKGS_REV = "0.13.0"
 
-RULES_NIXPKGS_INTEGRITY = "sha384-N2bS5BvSk8QMjhmuxdeeve9PBJUTwFOHufMV4sDgaviwXNdCGc7JaJPqwqZV1TbC"
+RULES_NIXPKGS_INTEGRITY = "sha256-MCcfe9OA5OIOTXEywySUbE/bwx6+C7tmOKD2GjfnQ5c="
 
 archive_override(
     module_name = "rules_nixpkgs_core",
     integrity = RULES_NIXPKGS_INTEGRITY,
     strip_prefix = "rules_nixpkgs-%s/core" % RULES_NIXPKGS_REV,
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % RULES_NIXPKGS_REV],
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v{REV}/rules_nixpkgs-{REV}.tar.gz".format(REV = RULES_NIXPKGS_REV)],
 )
 
 archive_override(
     module_name = "rules_nixpkgs_cc",
     integrity = RULES_NIXPKGS_INTEGRITY,
     strip_prefix = "rules_nixpkgs-%s/toolchains/cc" % RULES_NIXPKGS_REV,
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % RULES_NIXPKGS_REV],
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v{REV}/rules_nixpkgs-{REV}.tar.gz".format(REV = RULES_NIXPKGS_REV)],
 )
 
 archive_override(
     module_name = "rules_nixpkgs_posix",
     integrity = RULES_NIXPKGS_INTEGRITY,
     strip_prefix = "rules_nixpkgs-%s/toolchains/posix" % RULES_NIXPKGS_REV,
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/%s.tar.gz" % RULES_NIXPKGS_REV],
+    urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v{REV}/rules_nixpkgs-{REV}.tar.gz".format(REV = RULES_NIXPKGS_REV)],
 )
 
 non_module_deps = use_extension("//:non_module_deps.bzl", "non_module_deps")
