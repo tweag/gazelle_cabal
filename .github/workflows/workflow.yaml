@@ -43,23 +43,8 @@ jobs:
           bazelrc_path: .bazelrc.auth
       - name: Configure
         run: |
-          # Convert "ghc_X_Y_Z" to "X.Y.Z".
-          GHC_VERSION="$(sed 's/^ghc_//;s/_/./g' <<<"${{ matrix.ghc-version }}")"
-
-          bzlmod_setting=
-          if [[ ${{ matrix.enable-bzlmod }} = true ]]; then
-            bzlmod_setting="common --config=bzlmod"
-            # Update the GHC_VERSION in MODULE.bazel
-            sed -i.bak 's/^GHC_VERSION = .*$/GHC_VERSION = "'"$GHC_VERSION"'"/g' example/MODULE.bazel
-          fi
-
-          cat >>.bazelrc.local <<EOF
-          build --config=remote-cache
-          build --repository_cache=~/repo-cache/
-          $bzlmod_setting
-          EOF
-          ln -s ../.bazelrc.local example/.bazelrc.local
-          ln -s ../../.bazelrc.local tests/alternative-deps/.bazelrc.local
+          bash ./configure_ghc_and_bzlmod.sh ${{ matrix.ghc-version }} ${{ matrix.enable-bzlmod }}
+          echo 'build --config=remote-cache' >>.bazelrc.local
       - name: Build & test
         # only for GHC 9.4.8 with bzlmod
         if: ${{ !matrix.enable-bzlmod || matrix.ghc-version == 'ghc_9_4_8' }}
