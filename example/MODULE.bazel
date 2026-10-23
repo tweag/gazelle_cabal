@@ -90,7 +90,7 @@ bazel_dep(name = "rules_nixpkgs_core", version = RULES_NIXPKGS_REV)
 bazel_dep(name = "rules_nixpkgs_cc")
 bazel_dep(name = "rules_nixpkgs_posix")
 bazel_dep(name = "platforms", version = "1.1.0")
-bazel_dep(name = "rules_cc", version = "0.2.19")
+bazel_dep(name = "rules_cc", version = "0.2.27")
 
 # TODO Remove overrides once rules_nixpkgs components are in the BCR.
 
