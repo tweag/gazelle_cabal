@@ -72,7 +72,7 @@ jobs:
           run: bazel test //:buildifier-check
 
   all_ci_tests:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     needs:
       - test-nixpkgs
     if: ${{ always() }}
