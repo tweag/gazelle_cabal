@@ -234,10 +234,10 @@ gazelle_dependencies()
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "f3b800e9f6ca60bdef3709440f393348f7c18a29f30814288a7326285c80aab9",
-    strip_prefix = "buildtools-8.5.1",
+    sha256 = "5af90068e9e8812abdc455ad04cc474470bccc8bbabc8b571e3f58a66799680f",
+    strip_prefix = "buildtools-10.2.0",
     urls = [
-        "https://github.com/bazelbuild/buildtools/archive/refs/tags/v8.5.1.tar.gz",
+        "https://github.com/bazelbuild/buildtools/archive/refs/tags/v10.2.0.tar.gz",
     ],
 )
 
