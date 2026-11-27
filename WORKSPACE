@@ -62,9 +62,9 @@ http_archive(
 [
     http_archive(
         name = "rules_nixpkgs_" + toolchain,
-        sha256 = "54025689367205b835198677e686d8208b570bfd84e6872684ae657747673b97",
-        strip_prefix = "rules_nixpkgs-0.14.1/toolchains/" + toolchain,
-        urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.1/rules_nixpkgs-0.14.1.tar.gz"],
+        sha256 = "3808413cd8d1e32cf13f0abdf6fbdbf0c0b13bc80cbac3b7aa2c244b595bb0dd",
+        strip_prefix = "rules_nixpkgs-0.14.2/toolchains/" + toolchain,
+        urls = ["https://github.com/tweag/rules_nixpkgs/releases/download/v0.14.2/rules_nixpkgs-0.14.2.tar.gz"],
     )
     for toolchain in [
         "python",
